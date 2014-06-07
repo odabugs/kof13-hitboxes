@@ -1,0 +1,94 @@
+KOF XIII Hitbox Viewer:
+
+TODO list and prospective feature ideas (last update June 7, 2014):
+- Prioritize and sort the following items!
+- Centralized program configuration; one class to load and parse configs/argv
+- Global.py belongs on the chopping block after this class is implemented
+- Support at least the following config options:
+  - Set box colors for each box type we're currently anticipated to need:
+    - Player vulnerability boxes
+	- Player attack boxes
+	- Projectile attack boxes
+	- Projectile vulnerability boxes (these last 3 items are currently the same)
+	- Throw boxes (regular and special/super throws; same color for both is OK)
+	- Block/armor boxes (both are currently the same)
+	- Collision boxes
+	- Proximity detection boxes (e.g., Kyo hcb+K)
+	- Any other new box types found later on?
+  - Let users enter colors as #RRGGBB hex or rgb(RR,GG,BB) decimal
+  - Maybe support preset color names? (WHITE=rgb(255,255,255) etc.)
+  - Set the drawing order of boxes by type (also on a per-player basis?)
+  - Set transparency amounts of box fill and box borders (maybe pivots too?)
+  - Let users enter transparency amounts as hex or decimal (range is 0-255)
+  - Set size and color of pivot crosses (and alternate styles like X marks?)
+  - Selectively disable rendering of box fill, box borders and pivot crosses
+  - Selectively disable viewing certain box types (also on a per-player basis?)
+  - Disable player 1 or player 2 boxes/pivots entirely
+  - Support loading configs from files; add an appropriate default config file
+  - Support specifying to load a certain config file on command line
+  - Support setting config options via command line (and exporting to a file?)
+  - Warn users when enabling -nosync flag (it's NOT intended for normal usage)
+    - Probably shouldn't support setting this in config files as insurance
+  - Command line settings override config file settings
+  - Fine-grained (e.g. set per player) settings override more general settings
+- Autodetect when the game window is moved or resolution changed and adjust
+- Set more reasonable default box colors; make them the same for both players
+- Renderer.py has too many hardcoded details about box types and colors
+- Support drawing boxes in "layers" based on box type to handle box overlap
+  - Interleave drawing of each box "layer" between player 1 and 2
+- Work more on optimization; full speed has been observed in testing a few times
+- All the DirectX code overall is probably really poorly optimized right now
+  - ESPECIALLY the way box fill is currently implemented (Renderer.drawRect)
+- Any benefit to switching to DirectX 10/11 or OpenGL?  Can we get compositing
+  with transparent overlay windows easily with either of these options?
+- Can either above option offer an overlay that users won't need Aero for?
+- Find a breakpoint that will really run once per frame and not just in fights
+- Support ability to pause and unpause the game safely
+- Support frame advance
+- Frame-by-frame input control
+- Save and load replayable input sequences
+- Input sequence editor/viewer (for making TAS combos)
+- Add a separate GUI window? (to provide controls and UI for things like TASing)
+- Fix crash in default mode when clicking on the screen region used by overlay
+- Look into alternative implementation choices; e.g. DLL injection, EndScene()
+  - Might need to switch to another language (Visual C++?) for DLL injection
+  - If we need to switch, do the desired tools exist outside of Visual Studio?
+- Support translations for program strings; move strings to localized files
+- Write installation guide (preferably with illustrations; this process is dumb)
+- Write general documentation and usage guide
+- Fix box movement not lining up perfectly with camera shaking (Takuma's taunt)
+- Fix boxes touching the ceiling when the camera scrolls upward; e.g. Billy dp+K
+- Fix boxes not scaling when camera zooms in (e.g. during neomax animations)
+- Auto-calculate placement of hitbox Y = 0 onscreen; remove hardcoded 720p value
+  - Might be better to place boxes relative to the Y box coordinate value that
+    correlates to the vertical center of the screen?
+- Test fullscreen and "windowed fullscreen" modes (they probably won't work)
+- Test all windowed resolutions from the smallest available to at least 1600x900
+- What moves other than Yuri's taunt are affected by randomness?
+- Do any taunts other than Benimaru's have hitboxes or other special properties?
+- What does the wide box surrounding Daimon qcb+K represent?  Throwable box?
+- Test different solutions for floating-point roundoff affecting box alignment
+  relative to player sprites onscreen (boxes "shifting" by a pixel or two)
+- Reverse engineer how the game knows a box's "type"; hurtbox, throwbox, etc.
+- Reverse engineer locations of normal (non-special/super) throw boxes
+- Test at least all the basic normals/specials for all characters
+  - Are there any moves that require special attention to support properly?
+- What tools can record lossless 60hz video for hitbox capture purposes?
+  - How easy is it to split the output of those tools into individual frames
+    while remaining lossless?
+- What features could help make capturing box shots easier for wiki authors?
+- Test Python 2.7.7 and 64-bit Python builds (currently using 2.7.6, 32-bit)
+- Python 3 transition will probably never happen without all dependencies
+  - Is there any functional benefit that Python 3 could offer us?  Libraries?
+  - Might be best to move away from Python wholesale in the future?
+    (see earlier points about DLL injection/EndScene())
+- HitboxViewer.py's file and class name is misleading given its current role?
+  - Renaming it e.g. Process.py and giving the class a narrower scope may be
+    better for code clarity and reducing the current amount of code coupling
+- HitboxViewer and Renderer classes are getting a bit too tightly coupled?
+- Move all info about the game state to "game info" and "player info" classes?
+- More code refactoring? (a lot of this BS is probably not even called anymore)
+- Any way to replace the stage background with a solid color?
+- Any way to to render the player sprites without any smoothing/filtering?
+- Any way to completely disable or conceal onscreen HUD (bars, timer, etc.)?
+- Add pivot crosses to projectiles?  (Requires more reverse engineering work)

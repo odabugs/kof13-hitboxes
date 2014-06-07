@@ -1,0 +1,35 @@
+KoF XIII Hitbox Viewer Copyright (C) 2014 E.V. Fuller. (pdk.odabugs@gmail.com)
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted,
+provided that the above copyright notice appear in all copies and that
+both the copyright notice and this permission notice and warranty
+disclaimer appear in supporting documentation, and that the name of
+the above copyright holders, or their entities, not be used in
+advertising or publicity pertaining to distribution of the software
+without specific, written prior permission.
+
+The above copyright holders disclaim all warranties with regard to
+this software, including all implied warranties of merchantability and
+fitness. In no event shall the above copyright holders be liable for
+any special, indirect or consequential damages or any damages
+whatsoever resulting from loss of use, data or profits, whether in an
+action of contract, negligence or other tortious action, arising out
+of or in connection with the use or performance of this software.
+
+Additional notices and disclaimers:
+The King of Fighters XIII Copyright (C) 2010-2013 SNK Playmore Corporation
+Steam Copyright (C) 2003-2014 Valve Corporation
+All rights reserved by their respective copyright holders.
+
+This software, and all components or derivatives thereof, are not officially
+endorsed, supported, or sponsored by SNK Playmore Corporation nor by Valve
+Corporation, unless otherwise stated.  All use of this software, or any
+component or derivative thereof, is at the user's own risk, including the
+risk that the user's account may be banned from the Steam service due to
+the use of this software.
+
+DirectPython (C) 2007-2013 Heikki Salo (directpython.sourceforge.net)
+DirectPython is a project by Heikki Salo, located at the URL given above.
+This software is unrelated, and is not endorsed or supported by Heikki Salo
+unless otherwise stated.

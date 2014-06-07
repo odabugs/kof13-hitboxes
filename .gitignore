@@ -1,0 +1,7 @@
+*.zip
+*.pyc
+*.pyd
+*.lnk
+*.swp
+*~
+*.txt

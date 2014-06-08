@@ -1,17 +1,12 @@
-from ctypes import *
-from ctypes.wintypes import *
-from time import sleep, clock, tzname, daylight
+from time import tzname, daylight
 from datetime import datetime
-from struct import pack
 import traceback
-import itertools
+
+from pydbg import pydbg
+from pydbg.defines import *
 import utils
 
-from pydbg import *
-from pydbg.defines import *
-
 from Global import *
-from CStructures import *
 from Renderer import Renderer
 from HitboxViewer import HitboxViewer
 

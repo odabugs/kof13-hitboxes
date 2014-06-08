@@ -1,7 +1,5 @@
 from ctypes import *
 from ctypes.wintypes import *
-from pydbg import *
-from pydbg.defines import *
 
 BYTE      = c_ubyte
 WORD      = c_ushort

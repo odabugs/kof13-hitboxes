@@ -1,8 +1,6 @@
 from math import isnan, floor
 from ctypes import *
 from ctypes.wintypes import *
-from time import sleep, clock
-from struct import pack
 from directx.d3d import *
 from directx.types import *
 from directx.d3dx import *

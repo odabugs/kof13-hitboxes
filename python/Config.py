@@ -71,22 +71,22 @@ def parseColor(value):
 # map structure:
 # option name : (reader function, default value)
 playerConfigOptions = {
-	"enabled" : (parseBoolean, True),
-	"draw_pivot" : (parseBoolean, True),
-	"draw_box_fill" : (parseBoolean, False),
-	"draw_box_borders" : (parseBoolean, True),
-	"pivot_size" : (parseInt, 20),
-	"pivot_opacity" : (parseUnsignedByte, 0xFF),
-	"fill_opacity" : (parseUnsignedByte, 0x40),
-	"border_opacity" : (parseUnsignedByte, 0xFF),
-	"pivot_color" : (parseColor, colorByName("white")),
-	"collision_box_color" : (parseColor, colorByName("cyan")),
-	"vulnerable_box_color" : (parseColor, colorByName("blue")),
-	"attack_box_color" : (parseColor, colorByName("red")),
-	"guard_box_color" : (parseColor, colorByName("green")),
-	"throw_box_color" : (parseColor, colorByName("magenta")),
-	"projectile_vulnerable_box_color" : (parseColor, colorByName("yellow")),
-	"projectile_attack_box_color" : (parseColor, colorByName("orange")),
+	"enabled" : (parseBoolean, "yes"),
+	"draw_box_fill" : (parseBoolean, "yes"),
+	"draw_box_borders" : (parseBoolean, "yes"),
+	"draw_pivot" : (parseBoolean, "yes"),
+	"fill_opacity" : (parseUnsignedByte, "0x40"),
+	"border_opacity" : (parseUnsignedByte, "0xFF"),
+	"pivot_size" : (parseInt, "20"),
+	"pivot_opacity" : (parseUnsignedByte, "0xFF"),
+	"pivot_color" : (parseColor, "white"),
+	"collision_box_color" : (parseColor, "cyan"),
+	"vulnerable_box_color" : (parseColor, "blue"),
+	"attack_box_color" : (parseColor, "red"),
+	"guard_box_color" : (parseColor, "green"),
+	"throw_box_color" : (parseColor, "magenta"),
+	"projectile_vulnerable_box_color" : (parseColor, "yellow"),
+	"projectile_attack_box_color" : (parseColor, "orange"),
 	}
 
 # options set on a per-player basis override the same options set globally;

@@ -1,4 +1,4 @@
-KoF XIII Hitbox Viewer Copyright (C) 2014 E.V. Fuller. (pdk.odabugs@gmail.com)
+KoF XIII Hitbox Viewer Copyright (C) 2014 E.V. Fuller (pdk.odabugs@gmail.com)
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,

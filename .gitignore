@@ -5,4 +5,8 @@
 *.swp
 *~
 *.txt
+!TODO.txt
+!LICENSE.txt
+!INSTALL_*.txt
+!README_*.txt
 misc

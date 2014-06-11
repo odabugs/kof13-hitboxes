@@ -54,6 +54,7 @@ def colorByName(colorName, alpha=255):
 	result = colorsByName.get(colorName.lower(), None)
 	if result is not None:
 		result = result | (alpha << A_POS)
+	return result
 
 
 def colorAsHex(value, alpha=255):

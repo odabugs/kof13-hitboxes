@@ -80,22 +80,22 @@ class Renderer:
 		
 		self.chains = [
 			#(0x007EABF0, 0x000000), # black - causes problems
-			(0x007EAC14, 0xFFFFFF), # white - works (p1 projectiles)
-			#(0x007EAC20, 0xC00000), # crimson - Clark hcf+B
-			#(0x007EAC2C, 0xFFFF00), # yellow - works (p1 boxes)
-			(0x007EAC50, 0x00FF00), # green - works (p2 projectiles)
+			(0x007EAC14, 0xFF0000), # red - works (p1 Attack/Projectile/Throw boxes)
+			(0x007EAC20, 0x00FF00), # green - (P1 Block boxes)
+			(0x007EAC2C, 0x0000FF), # blue - works (p1 vulnerable boxes)
+			(0x007EAC50, 0xFF3333), # red (lighter) - works (p2 Attack/Projectile/Throw boxes)
 			#(0x007EAC5C, 0x0000FF), # blue - ???
-			#(0x007EAC68, 0xFFB0B0), # pink - works (p2 boxes)
+			(0x007EAC68, 0x3333FF), # blue (lighter) - works (p2 vulnerable boxes)
 			#(0x007EAC8C, 0xFF00FF), # magenta - ???
 			#(0x007EACC8, 0x800080), # purple - ???
 			#(0x007EACD4, 0xFF00FF), # magenta - ???
 			#(0x007EAC98, 0x808000), # brown - causes problems
 			]
 		self.chains2 = [
-			#(0x007EAC44, 0xFF0000), # red - player 2 pushbox
+			#(0x007EAC44, 0x33FFFF), # cyan (lighter) - player 2 pushbox
 			#(0x007EAC08, 0x00FFFF), # cyan - player 1 pushbox
-			#(0x007EAC74, 0x008000), # dark green - p2 proximity detect
-			#(0x007EAC38, 0xFF00FF), # magenta - 
+			#(0x007EAC74, 0xFFFF33), # yellow (lighter) - p2 proximity detect
+			#(0x007EAC38, 0xFFFF00), # yellow - p1 proximity detect (??)
 			]
 	
 

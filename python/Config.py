@@ -1,57 +1,146 @@
 from ConfigParser import RawConfigParser
 from sys import argv
+from os import getcwdu
 import os.path
+import re
 
-from Colors import *
+from Colors import colorByName, colorAsHex, colorAsRGB, printAsRGB
 from Global import *
 
 
 # supported config options and their defaults are at the bottom of this file
 WHITESPACE = " \t" # for passing to str.strip()
 ERROR_SUFFIX = "\n  Please refer to README.txt for help with config files."
+DEFAULT_CONFIG = os.path.join(getcwdu(), "default.cfg")
+GLOBAL_SECTION = "Global"
+P1_SECTION, P2_SECTION = "Player1", "Player2"
 
 
 class Config:
-	def __init__(self):
+	def __init__(self, configFile=None):
 		self.reader = RawConfigParser()
 		self.globalConfig = {}
 		self.p1config = {}
 		self.p2config = {}
+		
+		if configFile is not None:
+			self.loadFromFile(configFile)
 	
-	
-	# if player is not passed then fall back on globalConfig
-	def get(self, option, player=None):
+
+	def getGlobal(self, option):
 		originalOption = option.strip(WHITESPACE)
 		option = originalOption.lower()
-		if option not in allConfigOptions:
+
+		if option not in globalOptions:
 			raise ValueError(
-				"The option " + repr(originalOption) +
+				"The global config option " + repr(originalOption) +
 				" is not recognized." +
 				ERROR_SUFFIX)
 
-		g, p1, p2 = self.globalConfig, self.p1config, self.p2config
-		lookups = (g)
-		fallback = globalDefaults
-		if player == 1:
-			lookups = (p1, g)
-			fallback = playerDefaults
-		elif player == 2:
-			lookups = (p2, g)
-			fallback = playerDefaults
+		result = self.globalConfig.get(option, None)
+		if result is None:
+			result = globalDefaults[option]
+			self.globalConfig[option] = result
+		return result
 
-		for lookup in lookups:
+
+	def getPlayer(self, option, player):
+		originalOption = option.strip(WHITESPACE)
+		option = originalOption.lower()
+
+		if player == 1:
+			playerCfg = self.p1config
+		elif player == 2:
+			playerCfg = self.p2config
+		else:
+			raise ValueError("player parameter must be 1 or 2")
+
+		if option not in playerOptions:
+			raise ValueError(
+				"The player config option " + repr(originalOption) +
+				" is not recognized." +
+				ERROR_SUFFIX)
+
+		lookupOrder = (playerCfg, self.globalConfig, playerDefaults)
+		for lookup in lookupOrder:
 			result = lookup.get(option, None)
 			if result is not None:
+				playerCfg[option] = result
 				return result
-		else: # if for loop is exhausted
-			warnMsg = (
-				"WARNING: The option %s has no set value!" +
-				"\n  Falling back on this option's default value.")
-			print warnMsg % repr(originalOption)
-			resultParser, resultRawValue = fallback[option]
-			result = resultParser(resultRawValue)
-			return result
 	
+
+	def get(self, option, player=None):
+		if player is None:
+			return self.getGlobal(option)
+		elif player in (1, 2):
+			return self.getPlayer(option, player)
+		else:
+			raise ValueError("player must be 1, 2 or None (global)")
+	
+	
+	# for REPL class testing only
+	def printout(self):
+		def printWithSelectKeys(m, keysToPrint):
+			result = "{"
+			for k in keysToPrint:
+				if "color" in k:
+					printFn = printAsRGB
+				else:
+					printFn = repr
+				result += "\n\t%s: %s" % (k, printFn(m.get(k)))
+			result += "\n}"
+			print result
+
+		print "Global:"
+		printWithSelectKeys(self.globalConfig, globalOptions)
+		print " ----- "
+		print "Player 1:"
+		printWithSelectKeys(self.p1config, playerOptions)
+		print " ----- "
+		print "Player 2:"
+		printWithSelectKeys(self.p2config, playerOptions)
+	
+	
+	# TODO: add error checking (missing file, bad sections/options, etc.)
+	def loadFromFile(self, filePath=DEFAULT_CONFIG):
+		cfg = self.reader
+		cfg.read(filePath)
+
+		def fillGlobalConfig():
+			for option in globalOptions:
+				typeParser, defaultValue = rawGlobalDefaults[option]
+				toStore = None
+				try:
+					toStore = typeParser(cfg.get(GLOBAL_SECTION, option))
+				except Exception as e:
+					print e.message
+					toStore = None
+				finally:
+					if toStore is None:
+						toStore = typeParser(defaultValue)
+					self.globalConfig[option] = toStore
+
+		def fillPlayerConfig(player):
+			ps = {
+				1 : (P1_SECTION, self.p1config),
+				2 : (P2_SECTION, self.p2config)
+				}
+			section, playerConfig = ps[player]
+			for option in playerOptions:
+				typeParser, defaultValue = rawPlayerDefaults[option]
+				toStore = None
+				try:
+					toStore = typeParser(cfg.get(section, option))
+				except Exception as e:
+					print e.message
+					toStore = self.globalConfig[option]
+				finally:
+					playerConfig[option] = toStore
+
+		fillGlobalConfig()
+		fillPlayerConfig(1)
+		fillPlayerConfig(2)
+
 
 def parseBoolean(value):
 	originalValue = value.strip(WHITESPACE)
@@ -59,7 +148,9 @@ def parseBoolean(value):
 	trueValues  = set(["1", "true",  "yes", "on" ])
 	falseValues = set(["0", "false", "no",  "off"])
 
-	if value in trueValues:
+	if len(value) == 0:
+		return None
+	elif value in trueValues:
 		return True
 	elif value in falseValues:
 		return False
@@ -70,7 +161,7 @@ def parseBoolean(value):
 			ERROR_SUFFIX)
 
 
-# read hex (C syntax) or decimal unsigned bytes (we don't need octal support)
+# read hex (C syntax) or decimal unsigned bytes
 def parseUnsignedByte(value):
 	originalValue = value.strip(WHITESPACE)
 	value = originalValue.lower()
@@ -78,7 +169,9 @@ def parseUnsignedByte(value):
 	decimalRegex = re.compile("\A\d{1,3}\Z")
 
 	result = None
-	if hexRegex.match(value):
+	if len(value) == 0:
+		return None
+	elif hexRegex.match(value):
 		result = int(value, 16)
 	elif decimalRegex.match(value):
 		result = int(value, 10)
@@ -92,8 +185,12 @@ def parseUnsignedByte(value):
 		return result
 
 
+# do we even use this now?
 def parseInt(value, base=10, positiveOnly=True):
 	value = value.strip(WHITESPACE)
+	if len(value) == 0:
+		return None
+
 	result = None
 	try:
 		result = int(value, base)
@@ -115,6 +212,9 @@ def parseInt(value, base=10, positiveOnly=True):
 def parseColor(value):
 	originalValue = value.strip(WHITESPACE)
 	value = originalValue.lower()
+	if len(value) == 0:
+		return None
+
 	colorStringParsers = (colorByName, colorAsHex, colorAsRGB)
 	for parser in colorStringParsers:
 		result = parser(value)
@@ -128,6 +228,9 @@ def parseColor(value):
 
 
 def parseDrawOrder(value):
+	if len(value) == 0:
+		return None
+
 	clean = lambda s: s.strip(WHITESPACE).lower()
 	splitValue = [clean(item) for item in value.split(",")]
 	
@@ -142,7 +245,7 @@ def parseDrawOrder(value):
 		if entry in orderCounts:
 			orderCounts[entry] += 1
 		else:
-			newError("The entry '" + entry + "' (entry #%d) is invalid." % i)
+			newError("The entry '%s' (entry #%d) is invalid." % (entry, i))
 	
 	for pair in orderCounts.iteritems():
 		entry, count = pair
@@ -160,45 +263,64 @@ def parseDrawOrder(value):
 		return tuple(splitValue)
 
 
-# the following values can be set globally or individually per player;
+# probably the least messy code in this file
+def processMap(m):
+	result = {}
+	for key, value in m.items():
+		parser, rawValue = value
+		result[key] = parser(rawValue)
+	return result
+
+
+# these options can be set globally (see globalOptions) or per player;
 # options set on a per-player basis override the same options set globally
 # map structure:
 # option name : (reader function, default value)
-playerDefaults = {
+rawPlayerDefaults = {
 	"enabled" : (parseBoolean, "yes"),
-	"draw_box_fill" : (parseBoolean, "yes"),
-	"draw_box_borders" : (parseBoolean, "yes"),
-	"draw_pivot" : (parseBoolean, "yes"),
-	"fill_opacity" : (parseUnsignedByte, "0x40"),
-	"border_opacity" : (parseUnsignedByte, "0xFF"),
-	"pivot_radius" : (parseInt, "20"),
-	"pivot_opacity" : (parseUnsignedByte, "0xFF"),
-	"pivot_color" : (parseColor, "white"),
 	"collision_box_color" : (parseColor, "cyan"),
 	"vulnerable_box_color" : (parseColor, "blue"),
 	"attack_box_color" : (parseColor, "red"),
 	"guard_box_color" : (parseColor, "green"),
 	"throw_box_color" : (parseColor, "magenta"),
+	"throwable_box_color" : (parseColor, "white"),
 	"projectile_vulnerable_box_color" : (parseColor, "yellow"),
 	"projectile_attack_box_color" : (parseColor, "orange"),
 	}
+playerDefaults = processMap(rawPlayerDefaults)
+playerOptions = tuple(playerDefaults.keys())
 
-# ordered from lowest to highest drawing priority; higher overlaps lower
+# ordered from lowest to highest drawing priority; higher overlaps lower,
+# pivot is implicit and always has the highest priority (i.e., is drawn last)
 defaultDrawOrder = (
 	"collision",
-	"vulnerable",
-	"attack",
-	"guard",
+	"vulnerable", # hurtbox
+	"throwable",
+	"attack", # hitbox
+	"guard", # for blocking and for moves with armor points
 	"throw",
-	"projectile_vulnerable",
-	"projectile_attack",
-	"pivot"
+	"proj_vulnerable", # projectile hurtbox
+	"proj_attack", # projectile hitbox
 	)
 
-# "enabled" is only intended to turn off rendering on a per-player basis;
-# "draw_order" is intended to apply to both players alike
-globalDefaults = merge(
-	dictWithout(playerDefaults, ["enabled"]),
-	{"draw_order" : (parseDrawOrder, ", ".join(defaultDrawOrder))})
+# options that can be set globally but not on a per-player basis
+globalOnlyDefaults = {
+	"draw_box_borders" : (parseBoolean, "yes"),
+	"box_border_opacity" : (parseUnsignedByte, "0xFF"),
+	"draw_box_fill" : (parseBoolean, "yes"),
+	"box_fill_opacity" : (parseUnsignedByte, "0x40"),
+	"draw_pivots" : (parseBoolean, "yes"),
+	"pivot_opacity" : (parseUnsignedByte, "0xFF"),
+	"pivot_radius" : (parseUnsignedByte, "20"),
+	"pivot_color" : (parseColor, "white"),
+	"draw_order" : (parseDrawOrder, ",".join(defaultDrawOrder)),
+	}
+
+# "enabled" is only intended to turn off rendering on a per-player basis
+rawGlobalDefaults = merge(
+	dictWithout(rawPlayerDefaults, ["enabled"]),
+	globalOnlyDefaults)
+globalDefaults = processMap(rawGlobalDefaults)
+globalOptions = tuple(globalDefaults.keys())
 
 allConfigOptions = frozenset(allKeys(globalDefaults, playerDefaults))

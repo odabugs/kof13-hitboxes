@@ -99,3 +99,24 @@ def changeAlpha(color, newAlpha):
 	if newAlpha < 0 or newAlpha > 255:
 		raise ValueError("New alpha must be between 0 and 255 inclusive.")
 	return (color & RGB_MASK) | (newAlpha << A_POS)
+
+
+def ARGBtuple(color):
+	a = (color & A_MASK) >> A_POS
+	r = (color & G_MASK) >> R_POS
+	g = (color & G_MASK) >> G_POS
+	b = (color & B_MASK) >> B_POS
+	return (a, r, g, b)
+
+
+def printAsRGB(color):
+	if color is None:
+		return "None"
+	a, r, g, b = ARGBtuple(color)
+	return "rgb(%d, %d, %d)" % (r, g, b)
+
+
+def printAsARGB(color):
+	if color is None:
+		return "None"
+	return "argb(%d, %d, %d, %d)" % ARGBtuple(color)

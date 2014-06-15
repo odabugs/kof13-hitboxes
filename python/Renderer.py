@@ -66,8 +66,6 @@ class Renderer:
 		# reusable resources for drawing primitives/reading hitboxes
 		self.boxvec = (D3DXVECTOR2 * 5) ((0,0), (0,0), (0,0), (0,0), (0,0))
 		self.linevec = (D3DXVECTOR2 * 2) ((0,0), (0,0))
-		self.boxbuf1 = HITBOX1()
-		self.boxbuf2 = HITBOX2()
 		
 		self.left = 0
 		self.top = 0

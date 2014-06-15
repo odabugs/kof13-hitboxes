@@ -345,7 +345,6 @@ class Renderer:
 		left,  bottom = self.relativeCoords(left,  bottom)
 		right, top    = left + int(width - 1), bottom - int(height - 1)
 		points = self.boxToVector(left, top, right, bottom)
-		
 		transparentColor = color & 0x00FFFFFF
 		borderColor = color | (0xFF << 24)
 		innerColor = transparentColor | (0x40 << 24)

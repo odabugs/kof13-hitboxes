@@ -4,6 +4,8 @@
 *.lnk
 *.swp
 *~
+*.cfg
+!default.cfg
 *.txt
 !TODO.txt
 !LICENSE.txt

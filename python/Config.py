@@ -124,7 +124,7 @@ class Config:
 			ps = {
 				1 : (P1_SECTION, self.p1config),
 				2 : (P2_SECTION, self.p2config)
-				}
+			}
 			section, playerConfig = ps[player]
 			for option in playerOptions:
 				typeParser, defaultValue = rawPlayerDefaults[option]
@@ -286,7 +286,7 @@ rawPlayerDefaults = {
 	"throwable_box_color" : (parseColor, "white"),
 	"projectile_vulnerable_box_color" : (parseColor, "yellow"),
 	"projectile_attack_box_color" : (parseColor, "orange"),
-	}
+}
 playerDefaults = processMap(rawPlayerDefaults)
 playerOptions = tuple(playerDefaults.keys())
 
@@ -301,7 +301,7 @@ defaultDrawOrder = (
 	"throw",
 	"proj_vulnerable", # projectile hurtbox
 	"proj_attack", # projectile hitbox
-	)
+)
 
 # options that can be set globally but not on a per-player basis
 globalOnlyDefaults = {
@@ -314,7 +314,7 @@ globalOnlyDefaults = {
 	"pivot_radius" : (parseUnsignedByte, "20"),
 	"pivot_color" : (parseColor, "white"),
 	"draw_order" : (parseDrawOrder, ",".join(defaultDrawOrder)),
-	}
+}
 
 # "enabled" is only intended to turn off rendering on a per-player basis
 rawGlobalDefaults = merge(

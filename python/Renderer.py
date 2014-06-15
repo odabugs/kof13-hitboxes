@@ -7,6 +7,7 @@ from directx.d3dx import *
 
 from Global import *
 from CStructures import *
+from Colors import rgb
 
 user32 = windll.user32
 kernel32 = windll.kernel32
@@ -28,7 +29,7 @@ DT_NOCLIP = 0x100
 DT_SINGLELINE = 0x20
 APP_NAME = "HitboxViewerWindow"
 
-WHITE = 0xFFFFFFFF
+WHITE = rgb(255, 255, 255)
 
 
 def wndProc(hwnd, message, wParam, lParam):
@@ -77,26 +78,47 @@ class Renderer:
 		self.centerX = 0
 		self.centerY = 0
 		self.scale = 1.0 # scale factor applied to box coordinates before draw
+		self.baseY = 0 # base position onscreen where Y = 0 (i.e., the ground)
 		
-		self.chains = [
-			#(0x007EABF0, 0x000000), # black - causes problems
-			(0x007EAC14, 0xFF0000), # red - works (p1 Attack/Projectile/Throw boxes)
-			(0x007EAC20, 0x00FF00), # green - (P1 Block boxes)
-			(0x007EAC2C, 0x0000FF), # blue - works (p1 vulnerable boxes)
-			(0x007EAC50, 0xFF3333), # red (lighter) - works (p2 Attack/Projectile/Throw boxes)
-			#(0x007EAC5C, 0x0000FF), # blue - ???
-			(0x007EAC68, 0x3333FF), # blue (lighter) - works (p2 vulnerable boxes)
+		# buffer structures for reading hitbox data from memory
+		boxbuf1, boxbuf2 = HITBOX1(), HITBOX2()
+		# structure of p1addresses/p2addresses:
+		# (address, draw color, buffer object, pointer read offset)
+		p1addresses = (
+			# collision box
+			(0x007EAC08, rgb(000, 255, 255), boxbuf2, 8),
+			# attack boxes, projectile boxes, normal throws
+			(0x007EAC14, rgb(255, 000, 000), boxbuf1, 0),
+			# armor and guard/block
+			(0x007EAC20, rgb(000, 255, 000), boxbuf1, 0),
+			# vulnerable boxes
+			(0x007EAC2C, rgb(000, 000, 255), boxbuf1, 0),
+			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
+			(0x007EAC38, rgb(255, 255, 000), boxbuf2, 8),
+		)
+		p2addresses = (
+			# collision box
+			(0x007EAC44, rgb(064, 255, 255), boxbuf2, 8),
+			# attack boxes, projectile boxes, normal throws
+			(0x007EAC50, rgb(255, 064, 064), boxbuf1, 0),
+			# armor and guard/block
+			(0x007EAC5C, rgb(064, 255, 064), boxbuf1, 0),
+			# vulnerable boxes
+			(0x007EAC68, rgb(064, 064, 255), boxbuf1, 0),
+			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
+			(0x007EAC74, rgb(255, 255, 064), boxbuf2, 8),
+		)
+
+		# TODO: support configurable draw order based on box type
+		self.drawAddresses = interleave(p1addresses, p2addresses)
+
+		#UNKNOWN = [ # what do these do??
+			#(0x007EABF0, 0x064000), # black - broken
 			#(0x007EAC8C, 0xFF00FF), # magenta - ???
 			#(0x007EACC8, 0x800080), # purple - ???
 			#(0x007EACD4, 0xFF00FF), # magenta - ???
-			#(0x007EAC98, 0x808000), # brown - causes problems
-			]
-		self.chains2 = [
-			#(0x007EAC44, 0x33FFFF), # cyan (lighter) - player 2 pushbox
-			#(0x007EAC08, 0x00FFFF), # cyan - player 1 pushbox
-			#(0x007EAC74, 0xFFFF33), # yellow (lighter) - p2 proximity detect
-			#(0x007EAC38, 0xFFFF00), # yellow - p1 proximity detect (??)
-			]
+			#(0x007EAC98, 0x808000), # brown - broken
+		#]
 	
 
 	def release(self):
@@ -118,6 +140,7 @@ class Renderer:
 		self.centerX = self.width >> 1
 		self.centerY = self.height >> 1
 		self.scale = self.playerSpriteScale()
+		self.baseY = self.baseYOffset()
 
 		self.left = origin.x
 		self.top = origin.y
@@ -289,7 +312,7 @@ class Renderer:
 
 	def drawPivot(self, x, y):
 		WHITE = 0xFFFFFFFF
-		PIVOT_SIZE = 24
+		PIVOT_SIZE = 12
 		self.line.SetWidth(1)
 		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, 1, WHITE)
 		self.drawLine(x, y - PIVOT_SIZE, x, y + PIVOT_SIZE, 1, WHITE)
@@ -344,20 +367,35 @@ class Renderer:
 			color)
 	
 	
+	def baseYOffset(self):
+		yOffsetsByRes = {
+			#( 640,  360) : ,
+			( 854,  480) : 45,
+			#( 960,  540) : ,
+			#(1024,  576) : ,
+			(1280,  720) : 67,
+			#(1366,  768) : ,
+			#(1600,  900) : ,
+			#(1920, 1080) : ,
+			#(2048, 1152) : ,
+			#(2560, 1140) : ,
+		}
+		res = (self.width, self.height)
+		return (self.height - yOffsetsByRes.get(res, 0))
+
+
 	def playerSpriteScale(self, baseline=480.0):
 		# 854x480 ingame resolution displays player sprites at about 1:1 scale
 		return (float(self.height) / baseline)
 
 	
 	def relativeCoords(self, sourceX, sourceY):
-		# TODO: Auto-calculate yOff for all screen resolutions
-		yOff = 67 # base distance from bottom of screen when sourceY = 0
 		cam = self.camera
 		shakeX = cam.XShake * self.scale
 		shakeY = cam.YShake * self.scale
 
 		destX = self.centerX + (floor(sourceX) * self.scale) + shakeX
-		destY = self.height - yOff - (floor(sourceY) * self.scale) + shakeY
+		destY = self.baseY - (floor(sourceY) * self.scale) + shakeY
 
 		return (int(destX), int(destY))
 
@@ -392,7 +430,7 @@ class Renderer:
 			return False # box could not be drawn
 		
 		self.drawBoxRelative(left, top, right, bottom, color)
-		drawBoxAnnotations(left, top, right, bottom, hitbox.Flags, offset)
+		#drawBoxAnnotations(left, top, right, bottom, hitbox.Flags, offset)
 		return True # box was drawn
 
 	
@@ -431,10 +469,9 @@ class Renderer:
 		# render here
 		# draw some hitboxes oh boy!!!!
 		self.line.SetWidth(1)
-		for chain in self.chains:
-			self.drawHitboxList(chain[0], chain[1], self.boxbuf1, 0)
-		for chain in self.chains2:
-			self.drawHitboxList(chain[0], chain[1], self.boxbuf2, 8)
+		for boxDrawingInfo in self.drawAddresses:
+			address, color, boxBuffer, readOffset = boxDrawingInfo
+			self.drawHitboxList(address, color, boxBuffer, readOffset)
 
 		# draw player pivot axes
 		if self.drawPivots:

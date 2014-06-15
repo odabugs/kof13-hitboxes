@@ -341,17 +341,17 @@ class Renderer:
 		return points
 
 
-	def drawBoxRelative(self, left, top, right, bottom, color):
-		relLeft,  relTop    = self.relativeCoords(left,  top)
-		relRight, relBottom = self.relativeCoords(right, bottom)
-		points = self.boxToVector(relLeft, relTop, relRight, relBottom)
+	def drawBoxRelative(self, left, bottom, width, height, color):
+		left,  bottom = self.relativeCoords(left,  bottom)
+		right, top    = left + int(width - 1), bottom - int(height - 1)
+		points = self.boxToVector(left, top, right, bottom)
 		
 		transparentColor = color & 0x00FFFFFF
 		borderColor = color | (0xFF << 24)
 		innerColor = transparentColor | (0x40 << 24)
 		
 		if self.drawFilling:
-			self.drawRect(relLeft, relTop, relRight, relBottom, innerColor)
+			self.drawRect(left, top, right, bottom, innerColor)
 		if self.drawBorders:
 			self.line.Draw(points, len(points), borderColor)
 
@@ -367,6 +367,7 @@ class Renderer:
 			color)
 	
 	
+	# TODO: fill this in for all resolutions up to at least 1920x1080
 	def baseYOffset(self):
 		yOffsetsByRes = {
 			#( 640,  360) : ,
@@ -389,13 +390,16 @@ class Renderer:
 		return (float(self.height) / baseline)
 
 	
+	# TODO:
+	# - ensure that shaking is handled correctly
+	# - fix handling of vertical screen scrolling (e.g., Billy dp+K on hit)
 	def relativeCoords(self, sourceX, sourceY):
 		cam = self.camera
-		shakeX = cam.XShake * self.scale
-		shakeY = cam.YShake * self.scale
+		shakeX = round(cam.XShake * self.scale)
+		shakeY = round(cam.YShake * self.scale)
 
-		destX = self.centerX + (floor(sourceX) * self.scale) + shakeX
-		destY = self.baseY - (floor(sourceY) * self.scale) + shakeY
+		destX = self.centerX + round(sourceX * self.scale) + shakeX
+		destY = self.baseY   - round(sourceY * self.scale) + shakeY
 
 		return (int(destX), int(destY))
 
@@ -419,17 +423,15 @@ class Renderer:
 			result = coords + "; " + flagsStr
 			self.drawText(relLeft, relBottom + offset, 500, 500, color, result)
 		
-		color = color | (0xFF << 24)
+		#color = color | (0xFF << 24)
 		left,  bottom = hitbox.Left,  hitbox.Bottom
 		width, height = hitbox.Width, hitbox.Height
-		right, top    = left + width, bottom + height
-		#print "Coords: (%f, %f, %f, %f)" % (left, top, right, bottom)
 		if (width <= 0.0 or height <= 0.0 or
-			isnan(left)  or isnan(right)  or
-			isnan(top)   or isnan(bottom)):
+			isnan(left)  or isnan(bottom) or
+			isnan(width) or isnan(height)):
 			return False # box could not be drawn
 		
-		self.drawBoxRelative(left, top, right, bottom, color)
+		self.drawBoxRelative(left, bottom, width, height, color)
 		#drawBoxAnnotations(left, top, right, bottom, hitbox.Flags, offset)
 		return True # box was drawn
 
@@ -450,7 +452,7 @@ class Renderer:
 
 		# read list of successive boxes; stop when we loop back to the first
 		passes, limit = 0, 20
-		offset = 10
+		offset = 10 # vertical offset so annotation text doesn't overlap
 		#while currentBox.Next1 != base and passes < limit:
 		while currentBox.Next1 != base:
 			if not (readNextBox() and drawBox(offset)):

@@ -341,6 +341,7 @@ class Renderer:
 
 	def drawBoxRelative(self, left, bottom, width, height, color):
 		left,  bottom = self.relativeCoords(left,  bottom)
+		width, height = width * self.scale, height * self.scale
 		right, top    = left + int(width - 1), bottom - int(height - 1)
 		points = self.boxToVector(left, top, right, bottom)
 		transparentColor = color & 0x00FFFFFF
@@ -367,13 +368,13 @@ class Renderer:
 	# TODO: fill this in for all resolutions up to at least 1920x1080
 	def baseYOffset(self):
 		yOffsetsByRes = {
-			#( 640,  360) : ,
+			( 640,  360) : 34,
 			( 854,  480) : 45,
-			#( 960,  540) : ,
-			#(1024,  576) : ,
+			( 960,  540) : 50,
+			(1024,  576) : 54,
 			(1280,  720) : 67,
-			#(1366,  768) : ,
-			#(1600,  900) : ,
+			(1366,  768) : 71,
+			(1600,  900) : 83,
 			#(1920, 1080) : ,
 			#(2048, 1152) : ,
 			#(2560, 1140) : ,

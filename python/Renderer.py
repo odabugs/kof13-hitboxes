@@ -4,6 +4,7 @@ from ctypes.wintypes import *
 from directx.d3d import *
 from directx.types import *
 from directx.d3dx import *
+from time import sleep
 
 from Global import *
 from CStructures import *
@@ -43,12 +44,12 @@ def wndProc(hwnd, message, wParam, lParam):
 
 
 class Renderer:
-	def __init__(self, environment):
+	def __init__(self, environment, tickerInterval=2):
 		self.env = environment
 		self.viewer = self.env.viewer
+		self.camera = self.viewer.camera
 		self.p1 = self.viewer.p1
 		self.p2 = self.viewer.p2
-		self.camera = self.viewer.camera
 
 		self.drawFilling = not argvContains("-nofill")
 		self.drawBorders = not argvContains("-noborders")
@@ -77,7 +78,10 @@ class Renderer:
 		self.centerY = 0
 		self.scale = 1.0 # scale factor applied to box coordinates before draw
 		self.baseY = 0 # base position onscreen where Y = 0 (i.e., the ground)
-		
+
+		self.updateWindowTickerInterval = tickerInterval
+		self.updateWindowTicker = self.updateWindowTickerInterval
+
 		# buffer structures for reading hitbox data from memory
 		boxbuf1, boxbuf2 = HITBOX1(), HITBOX2()
 		# structure of p1addresses/p2addresses:
@@ -130,20 +134,47 @@ class Renderer:
 
 	
 	def setDimensions(self):
+		self.viewer.setKOFRects()
 		origin = self.viewer.kof_origin
-		resolution = self.viewer.kof_resolution
+		#resolution = self.viewer.kof_resolution
+		br = self.viewer.kof_bounding_rect
+		cr = self.viewer.kof_client_rect
 
-		self.width = resolution.x
-		self.height = resolution.y
+		self.width = cr.right
+		self.height = cr.bottom
 		self.centerX = self.width >> 1
 		self.centerY = self.height >> 1
 		self.scale = self.playerSpriteScale()
 		self.baseY = self.baseYOffset()
 
-		self.left = origin.x
-		self.top = origin.y
-		self.right = self.left + self.width
-		self.bottom = self.top + self.height
+		self.left,  self.top    = origin.x,  origin.y
+		self.right, self.bottom = br.right, br.bottom
+
+
+	def hasWindowMoved(self):
+		# capture new game window position and size onscreen
+		self.viewer.setKOFRects() # mutates self.viewer.kof_bounding_rect
+		br = self.viewer.kof_bounding_rect
+		origin = self.viewer.kof_origin
+		newLeft, newTop = origin.x, origin.y
+		newRight, newBottom = br.right, br.bottom
+
+		if ((self.left  != newLeft)  or (self.top    != newTop   ) or
+			(self.right != newRight) or (self.bottom != newBottom)):
+			return True
+		else:
+			return False
+
+
+	def updateWindowPosition(self):
+		if not self.hasWindowMoved():
+			return
+		
+		self.setDimensions()
+		x, y = self.left, self.top
+		width, height = self.width, self.height
+		#print "New window position/size: " + repr((x, y, width, height))
+		user32.MoveWindow(self.hwnd, x, y, width, height, True)
 
 
 	def makeWindow(self):
@@ -234,7 +265,7 @@ class Renderer:
 		params.SwapEffect = D3DSWAPEFFECT.DISCARD
 		params.BackBufferWidth = self.width
 		params.BackBufferHeight = self.height
-		params.BackBufferFormat = D3DFORMAT.A8R8G8B8
+		params.BackBufferFormat = D3DFORMAT.A8R8G8B8 # ARGB, 32bpp
 		params.MultiSampleType = 0 # D3DMULTISAMPLE_NONE; no multisampling
 		
 		self.d3d = POINTER(IDirect3D9)(address)
@@ -255,6 +286,12 @@ class Renderer:
 		self.device.SetRenderState(D3DRS_CULLMODE, D3DCULL.NONE)
 
 		self.createPrimitives()
+		# for testing window move/resize
+		"""
+		x, y = self.left, self.top
+		width, height = self.width, self.height
+		print "Starting window position/size: " + repr((x, y, width, height))
+		"""
 
 
 	def pumpMessages(self):
@@ -460,11 +497,12 @@ class Renderer:
 	
 
 	def renderFrame(self):
-		# grab latest game state
-		self.viewer.update()
-		
-		# start rendering
-		self.beginScene()
+		self.viewer.update() # grab latest game state
+		# has the game window been moved/resized?
+		if self.updateWindowTicker == 0:
+			self.updateWindowPosition()
+			self.updateWindowTicker = self.updateWindowTickerInterval
+		self.beginScene() # start rendering
 		
 		# render here
 		# draw some hitboxes oh boy!!!!
@@ -481,3 +519,6 @@ class Renderer:
 		
 		# finish rendering and commit to screen
 		self.endScene()
+		if self.updateWindowTicker > 0:
+			self.updateWindowTicker -= 1
+		#sleep(0.001)

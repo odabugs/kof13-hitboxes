@@ -36,11 +36,10 @@ class HitboxViewer:
 		self.kof_pid = 0 # KOF process ID
 		self.kof_proc = None # KOF process object
 		self.kof_threads = [] # full list of thread IDs used by game
-		self.kof_client_rect = None
-		self.kof_bounding_rect = None
-		self.kof_resolution = None
-		self.kof_origin = None
-
+		self.kof_client_rect = RECT()
+		self.kof_bounding_rect = RECT()
+		self.kof_resolution = POINT(0, 0)
+		self.kof_origin = POINT(0, 0)
 		self.camera = GAME_CAMERA()
 
 		self.p1 = PLAYER()
@@ -112,7 +111,7 @@ class HitboxViewer:
 
 	def setKOFWindowID(self):
 		KOF_WINDOW_TITLE = "The King of Fighters XIII"
-		interval = 0.05
+		interval = 0.25
 
 		while (self.kof_window == 0):
 			self.kof_window = user32.FindWindowA(None, KOF_WINDOW_TITLE)
@@ -121,7 +120,7 @@ class HitboxViewer:
 	
 	def setKOFProcessID(self):
 		PROCESS_ALL_ACCESS = 0x001F0FFF
-		interval = 0.05
+		interval = 0.25
 		pid = c_int()
 		tid = 0
 
@@ -135,20 +134,16 @@ class HitboxViewer:
 	
 	
 	def setKOFRects(self):
-		client_rect = RECT()
-		bounding_rect = RECT()
-		pt = POINT(0, 0)
-
-		user32.GetClientRect(self.kof_window, byref(client_rect))
-		user32.GetWindowRect(self.kof_window, byref(bounding_rect))
-		user32.ClientToScreen(self.kof_window, byref(pt))
+		user32.GetClientRect(self.kof_window, byref(self.kof_client_rect))
+		user32.GetWindowRect(self.kof_window, byref(self.kof_bounding_rect))
+		self.kof_origin.x = 0
+		self.kof_origin.y = 0
+		user32.ClientToScreen(self.kof_window, byref(self.kof_origin))
 		
-		self.kof_client_rect = client_rect
-		self.kof_bounding_rect = bounding_rect
-		self.kof_resolution = POINT(client_rect.right, client_rect.bottom)
-		self.kof_origin = pt
+		self.kof_resolution.x = self.kof_client_rect.right
+		self.kof_resolution.y = self.kof_client_rect.bottom
 	
-
+	
 	def bumpProcessPriority(self):
 		this_proc = kernel32.GetCurrentProcess()
 		kernel32.SetPriorityClass(this_proc, 0x00008000) # above normal

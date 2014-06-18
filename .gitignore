@@ -3,6 +3,7 @@
 *.pyd
 *.lnk
 *.swp
+*.swo
 *~
 *.cfg
 !default.cfg

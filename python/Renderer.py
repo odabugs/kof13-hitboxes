@@ -262,7 +262,7 @@ class Renderer:
 			raise Exception("Direct3DCreate9: %s" % self.viewer.getLastError())
 		
 		params.Windowed = True
-		params.SwapEffect = D3DSWAPEFFECT.DISCARD
+		params.SwapEffect = D3DSWAPEFFECT.FLIP
 		params.BackBufferWidth = self.width
 		params.BackBufferHeight = self.height
 		params.BackBufferFormat = D3DFORMAT.A8R8G8B8 # ARGB, 32bpp
@@ -299,12 +299,13 @@ class Renderer:
 		msg = MSG()
 		isQuitMsg = 0
 		WM_QUIT = 18
+		msgs, limit = 0, 5
 
-		while not quit:
+		while not quit and msgs < limit:
 			# 0, 0 = no message type filtering
 			#isQuitMsg = user32.GetMessageA(pointer(msg), self.hwnd, 0, 0)
 			#isQuitMsg = user32.GetMessageA(pointer(msg), None, 0, 0)
-			isQuitMsg = user32.PeekMessageA(pointer(msg), self.hwnd, 0, 0, 1)
+			isQuitMsg = user32.PeekMessageA(byref(msg), self.hwnd, 0, 0, 1)
 			
 			if (msg.message & 0xFFFF == WM_QUIT):
 				quit = True # this is silly
@@ -316,6 +317,7 @@ class Renderer:
 			user32.DispatchMessageA(byref(msg))
 			if not self.syncedMode:
 				self.renderFrame()
+			msgs += 1
 	
 
 	def beginScene(self):
@@ -521,4 +523,6 @@ class Renderer:
 		self.endScene()
 		if self.updateWindowTicker > 0:
 			self.updateWindowTicker -= 1
+		if self.syncedMode:
+			self.pumpMessages()
 		#sleep(0.001)

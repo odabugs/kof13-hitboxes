@@ -34,13 +34,21 @@ WHITE = rgb(255, 255, 255)
 
 
 def wndProc(hwnd, message, wParam, lParam):
-	WM_DESTROY = 2
+	WM_DESTROY = 0x0002
 	if message == WM_DESTROY:
 		user32.PostQuitMessage(0)
 		return 0
-	else:
-		return user32.DefWindowProcA(c_int(hwnd), c_int(message),
-			c_int(wParam), c_int(lParam))
+	"""
+	# experiment with capturing mouse clicks on the overlay window
+	# (this only seems to work if WS_EX_LAYERED is turned off)
+	WM_LBUTTONDOWN = 0x0201
+	if message == WM_LBUTTONDOWN:
+		MASK = 0xFFFF
+		x, y = lParam & MASK, (lParam & (MASK << 16)) >> 16
+		print "OH YES (%d, %d)" % (x, y)
+	#"""
+	return user32.DefWindowProcA(c_int(hwnd), c_int(message),
+		c_int(wParam), c_int(lParam))
 
 
 class Renderer:
@@ -295,29 +303,20 @@ class Renderer:
 
 
 	def pumpMessages(self):
-		quit = False
 		msg = MSG()
 		isQuitMsg = 0
-		WM_QUIT = 18
-		msgs, limit = 0, 5
+		WM_QUIT = 0x0012
 
-		while not quit and msgs < limit:
-			# 0, 0 = no message type filtering
-			#isQuitMsg = user32.GetMessageA(pointer(msg), self.hwnd, 0, 0)
-			#isQuitMsg = user32.GetMessageA(pointer(msg), None, 0, 0)
-			isQuitMsg = user32.PeekMessageA(byref(msg), self.hwnd, 0, 0, 1)
-			
-			if (msg.message & 0xFFFF == WM_QUIT):
-				quit = True # this is silly
+		while user32.PeekMessageA(byref(msg), self.hwnd, 0, 0, 1) != 0:
+			msgWord = msg.message & 0xFFFF
+			if msgWord == WM_QUIT:
 				print "Exiting Renderer.pumpMessages loop"
 				break
 			
 			user32.TranslateMessage(byref(msg))
-			#print "Translated message 0x%x" % msg.message
 			user32.DispatchMessageA(byref(msg))
 			if not self.syncedMode:
 				self.renderFrame()
-			msgs += 1
 	
 
 	def beginScene(self):
@@ -525,4 +524,10 @@ class Renderer:
 			self.updateWindowTicker -= 1
 		if self.syncedMode:
 			self.pumpMessages()
-		#sleep(0.001)
+		"""
+		# experiment with checking window focus
+		if user32.GetForegroundWindow() == self.viewer.kof_window:
+			print "I AM HAPPY"
+		else:
+			print "I AM DEPRESSED"
+		#"""

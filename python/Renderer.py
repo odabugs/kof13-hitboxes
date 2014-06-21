@@ -68,6 +68,9 @@ class Renderer:
 			self.lineThickness = 3
 		else:
 			self.lineThickness = 1
+		# control list used in for loops when drawing thick lines
+		# (so we aren't creating new list objects all day)
+		self.thicknessRange = range(0, self.lineThickness)
 
 		self.hwnd = None
 		self.wndClass = None
@@ -94,6 +97,10 @@ class Renderer:
 
 		self.updateWindowTickerInterval = tickerInterval
 		self.updateWindowTicker = self.updateWindowTickerInterval
+		
+		# frame ticker at the bottom of the screen
+		self.frameCounter = 1
+		self.frameCounterLimit = 60
 
 		# buffer structures for reading hitbox data from memory
 		boxbuf1, boxbuf2 = HITBOX1(), HITBOX2()
@@ -249,6 +256,7 @@ class Renderer:
 	def createPrimitives(self):
 		self.line = POINTER(ID3DXLine)()
 		d3dxdll.D3DXCreateLine(self.device, byref(self.line))
+		self.line.SetWidth(1)
 
 		self.font = POINTER(ID3DXFont)()
 		d3dxdll.D3DXCreateFontW(
@@ -262,7 +270,7 @@ class Renderer:
 			0, # font rendering precision
 			0, # font rendering quality
 			0, # font pitch and family index
-			LPCWSTR(unicode("Arial")), # font typeface
+			LPCWSTR(unicode("Consolas")), # font typeface
 			byref(self.font))
 
 
@@ -345,10 +353,11 @@ class Renderer:
 	
 
 	def drawPivot(self, x, y):
-		WHITE = 0xFFFFFFFF
 		PIVOT_SIZE = 12
+		self.line.SetWidth(self.lineThickness)
 		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, WHITE)
 		self.drawLine(x, y - PIVOT_SIZE, x, y + PIVOT_SIZE, WHITE)
+		self.line.SetWidth(1)
 	
 
 	# draw the fill color inside a rectangle
@@ -365,6 +374,15 @@ class Renderer:
 			self.line.Draw(points, len(points), color)
 
 		self.line.SetWidth(self.lineThickness)
+	
+
+	def drawBoxBorders(self, left, top, right, bottom, color):
+		pointsLength = len(self.boxvec)
+		for offset in self.thicknessRange:
+			points = self.boxToVector(
+				left  + offset, top    + offset,
+				right - offset, bottom - offset)
+			self.line.Draw(points, pointsLength, color)
 	
 
 	def boxToVector(self, left, top, right, bottom):
@@ -389,7 +407,8 @@ class Renderer:
 		if self.drawFilling:
 			self.drawFill(left, top, right, bottom, innerColor)
 		if self.drawBorders:
-			self.line.Draw(points, len(points), borderColor)
+			self.drawBoxBorders(left, top, right, bottom, borderColor)
+			#self.line.Draw(points, len(points), borderColor)
 
 
 	def drawText(self, x, y, width, height, color, text):
@@ -505,9 +524,7 @@ class Renderer:
 			self.updateWindowTicker = self.updateWindowTickerInterval
 		self.beginScene() # start rendering
 		
-		# render here
 		# draw some hitboxes oh boy!!!!
-		self.line.SetWidth(self.lineThickness)
 		for boxDrawingInfo in self.drawAddresses:
 			address, color, boxBuffer, readOffset = boxDrawingInfo
 			self.drawHitboxList(address, color, boxBuffer, readOffset)

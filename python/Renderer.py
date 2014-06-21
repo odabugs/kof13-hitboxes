@@ -355,6 +355,7 @@ class Renderer:
 	def drawPivot(self, x, y):
 		PIVOT_SIZE = 12
 		self.line.SetWidth(self.lineThickness)
+		y = y - (self.lineThickness >> 1)
 		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, WHITE)
 		self.drawLine(x, y - PIVOT_SIZE, x, y + PIVOT_SIZE, WHITE)
 		self.line.SetWidth(1)

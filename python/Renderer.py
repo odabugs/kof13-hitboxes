@@ -64,6 +64,10 @@ class Renderer:
 		self.drawBorders = not argvContains("-noborders")
 		self.drawPivots  = not argvContains("-nopivots")
 		self.syncedMode  = not argvContains("-nosync")
+		if argvContains("-thicklines"):
+			self.lineThickness = 3
+		else:
+			self.lineThickness = 1
 
 		self.hwnd = None
 		self.wndClass = None
@@ -96,28 +100,28 @@ class Renderer:
 		# structure of p1addresses/p2addresses:
 		# (address, draw color, buffer object, pointer read offset)
 		p1addresses = (
-			# collision box
-			(0x007EAC08, rgb(000, 255, 255), boxbuf2, 8),
-			# attack boxes, projectile boxes, normal throws
-			(0x007EAC14, rgb(255, 000, 000), boxbuf1, 0),
-			# armor and guard/block
-			(0x007EAC20, rgb(000, 255, 000), boxbuf1, 0),
 			# vulnerable boxes
-			(0x007EAC2C, rgb(000, 000, 255), boxbuf1, 0),
+			(0x007EAC2C, 0x0000FF, boxbuf1, 0),
+			# collision box
+			(0x007EAC08, 0x00FFFF, boxbuf2, 8),
+			# attack boxes, projectile boxes, normal throws
+			(0x007EAC14, 0xFF0000, boxbuf1, 0),
+			# armor and guard/block
+			(0x007EAC20, 0x00FF00, boxbuf1, 0),
 			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
-			(0x007EAC38, rgb(255, 255, 000), boxbuf2, 8),
+			(0x007EAC38, 0xFFFF00, boxbuf2, 8),
 		)
 		p2addresses = (
-			# collision box
-			(0x007EAC44, rgb(064, 255, 255), boxbuf2, 8),
-			# attack boxes, projectile boxes, normal throws
-			(0x007EAC50, rgb(255, 064, 064), boxbuf1, 0),
-			# armor and guard/block
-			(0x007EAC5C, rgb(064, 255, 064), boxbuf1, 0),
 			# vulnerable boxes
-			(0x007EAC68, rgb(064, 064, 255), boxbuf1, 0),
+			(0x007EAC68, 0x4040FF, boxbuf1, 0),
+			# collision box
+			(0x007EAC44, 0x40FFFF, boxbuf2, 8),
+			# attack boxes, projectile boxes, normal throws
+			(0x007EAC50, 0xFF4040, boxbuf1, 0),
+			# armor and guard/block
+			(0x007EAC5C, 0x40FF40, boxbuf1, 0),
 			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
-			(0x007EAC74, rgb(255, 255, 064), boxbuf2, 8),
+			(0x007EAC74, 0xFFFF40, boxbuf2, 8),
 		)
 
 		# TODO: support configurable draw order based on box type
@@ -333,33 +337,34 @@ class Renderer:
 		return setDirect3D
 	
 	
-	def drawLine(self, x1, y1, x2, y2, width, color):
+	def drawLine(self, x1, y1, x2, y2, color):
 		points = self.linevec
 		points[0].x, points[0].y = (x1, y1)
 		points[1].x, points[1].y = (x2, y2)
-		self.line.SetWidth(width)
 		self.line.Draw(points, len(points), color)
 	
 
 	def drawPivot(self, x, y):
 		WHITE = 0xFFFFFFFF
 		PIVOT_SIZE = 12
-		self.line.SetWidth(1)
-		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, 1, WHITE)
-		self.drawLine(x, y - PIVOT_SIZE, x, y + PIVOT_SIZE, 1, WHITE)
+		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, WHITE)
+		self.drawLine(x, y - PIVOT_SIZE, x, y + PIVOT_SIZE, WHITE)
 	
 
-	# crude, but functional
-	def drawRect(self, left, top, right, bottom, color):
+	# draw the fill color inside a rectangle
+	# SLOW AS HELL, but functional for now
+	def drawFill(self, left, top, right, bottom, color):
+		self.line.SetWidth(1)
 		points = self.linevec
 		points[0].x = left
 		points[1].x = right
-		self.line.SetWidth(1)
 
 		for row in range(max(top, 0), min(bottom + 1, self.height - 1)):
 			points[0].y = row
 			points[1].y = row
 			self.line.Draw(points, len(points), color)
+
+		self.line.SetWidth(self.lineThickness)
 	
 
 	def boxToVector(self, left, top, right, bottom):
@@ -382,7 +387,7 @@ class Renderer:
 		innerColor = transparentColor | (0x40 << 24)
 		
 		if self.drawFilling:
-			self.drawRect(left, top, right, bottom, innerColor)
+			self.drawFill(left, top, right, bottom, innerColor)
 		if self.drawBorders:
 			self.line.Draw(points, len(points), borderColor)
 
@@ -502,7 +507,7 @@ class Renderer:
 		
 		# render here
 		# draw some hitboxes oh boy!!!!
-		self.line.SetWidth(1)
+		self.line.SetWidth(self.lineThickness)
 		for boxDrawingInfo in self.drawAddresses:
 			address, color, boxBuffer, readOffset = boxDrawingInfo
 			self.drawHitboxList(address, color, boxBuffer, readOffset)

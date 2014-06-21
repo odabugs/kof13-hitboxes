@@ -60,7 +60,7 @@ class Renderer:
 		self.p2 = self.viewer.p2
 		self.windowsMessage = MSG()
 
-		self.drawFilling = not argvContains("-nofill")
+		self.drawFilling = argvContains("-usefill")
 		self.drawBorders = not argvContains("-noborders")
 		self.drawPivots  = not argvContains("-nopivots")
 		self.syncedMode  = not argvContains("-nosync")

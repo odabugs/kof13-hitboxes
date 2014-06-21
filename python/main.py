@@ -10,6 +10,9 @@ from Global import *
 from Renderer import Renderer
 from HitboxViewer import HitboxViewer
 
+#FRAME_BP = 0x0050EBD0
+FRAME_BP = 0x004D6B3F
+START_BP = 0x0050DB70
 
 class Main:
 	def __init__(self):
@@ -29,12 +32,8 @@ class Main:
 			desc = "Findin' hitboxes!"
 			if self.passes != 0:
 				return DBG_CONTINUE
-			#dbg.bp_set_hw(0x0050DC23, 1, HW_EXECUTE | HW_ACCESS,
-			#description=desc, handler=printStuff)
-			#dbg.bp_set(0x0050DC23, description=desc, handler=printStuff)
-			#dbg.bp_set(0x0050DA90, description=desc, handler=render)
-			dbg.bp_set(0x0050EBD0, description=desc, handler=renderFrame)
-			dbg.bp_del(0x0050DB70)
+			dbg.bp_set(FRAME_BP, description=desc, handler=renderFrame)
+			dbg.bp_del(START_BP)
 			self.passes = 1
 			stub = lambda dbg: DBG_CONTINUE # "dummy" HW breakpoint handler
 			dbg.set_callback(EXCEPTION_BREAKPOINT, stub)
@@ -45,7 +44,7 @@ class Main:
 		self.renderer.initDirect3D()
 		self.dbg.set_callback(EXCEPTION_BREAKPOINT, initialCallbackHandler)
 		self.dbg.attach(self.viewer.kof_pid)
-		self.dbg.bp_set(0x0050DB70)
+		self.dbg.bp_set(START_BP)
 		self.dbg.run()
 
 
@@ -53,7 +52,8 @@ class Main:
 		self.viewer.findGame()
 		self.renderer.makeWindow()
 		self.renderer.initDirect3D()
-		self.renderer.pumpMessages()
+		#self.renderer.pumpMessages()
+		self.renderer.runAsynchronous()
 
 
 	def release(self):

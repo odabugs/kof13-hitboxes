@@ -58,6 +58,7 @@ class Renderer:
 		self.camera = self.viewer.camera
 		self.p1 = self.viewer.p1
 		self.p2 = self.viewer.p2
+		self.windowsMessage = MSG()
 
 		self.drawFilling = not argvContains("-nofill")
 		self.drawBorders = not argvContains("-noborders")
@@ -294,17 +295,10 @@ class Renderer:
 		self.device.SetRenderState(D3DRS_CULLMODE, D3DCULL.NONE)
 
 		self.createPrimitives()
-		# for testing window move/resize
-		"""
-		x, y = self.left, self.top
-		width, height = self.width, self.height
-		print "Starting window position/size: " + repr((x, y, width, height))
-		"""
 
 
 	def pumpMessages(self):
-		msg = MSG()
-		isQuitMsg = 0
+		msg = self.windowsMessage
 		WM_QUIT = 0x0012
 
 		while user32.PeekMessageA(byref(msg), self.hwnd, 0, 0, 1) != 0:
@@ -315,8 +309,9 @@ class Renderer:
 			
 			user32.TranslateMessage(byref(msg))
 			user32.DispatchMessageA(byref(msg))
-			if not self.syncedMode:
-				self.renderFrame()
+
+		if not self.syncedMode:
+			self.renderFrame()
 	
 
 	def beginScene(self):
@@ -516,8 +511,6 @@ class Renderer:
 		if self.drawPivots:
 			self.drawPlayerPivots()
 
-		#self.drawText(50, 240, 500, 500, 0xFF00FF00, "hello")
-		
 		# finish rendering and commit to screen
 		self.endScene()
 		if self.updateWindowTicker > 0:
@@ -531,3 +524,12 @@ class Renderer:
 		else:
 			print "I AM DEPRESSED"
 		#"""
+	
+
+	def runSynchronous(self):
+		pass
+
+
+	def runAsynchronous(self):
+		while True:
+			self.pumpMessages()

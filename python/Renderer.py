@@ -1,26 +1,39 @@
-from math import isnan, floor
+from math import isnan
 from ctypes import *
 from ctypes.wintypes import *
 from directx.d3d import *
 from directx.types import *
 from directx.d3dx import *
-from time import sleep
+#from time import sleep
 
 from Global import *
 from CStructures import *
-from Colors import rgb
+from Colors import rgb, changeAlpha
 
 user32 = windll.user32
 kernel32 = windll.kernel32
 d3d = windll.d3d9
 
+D3D_OK = 0
+WM_DESTROY = 2
+
 D3DRS_ZENABLE  = 7
 D3DRS_LIGHTING = 137
 D3DRS_CULLMODE = 22
 
-WS_EX_TOPMOST     = 8
+D3DPOOL_MANAGED = 1
+
+D3DFVF_XYZRHW     = 0x04
+D3DFVF_DIFFUSE    = 0x40
+D3D_VERTEX_FORMAT = D3DFVF_XYZRHW | D3DFVF_DIFFUSE
+
+D3DPT_LINESTRIP     = 3
+D3DPT_TRIANGLESTRIP = 5
+D3DPT_TRIANGLEFAN   = 6
+
+WS_EX_TOPMOST     = 0x00000008
 WS_EX_COMPOSITED  = 0x02000000
-WS_EX_TRANSPARENT = 32
+WS_EX_TRANSPARENT = 0x00000020
 WS_EX_LAYERED     = 0x00080000
 WS_POPUP          = 0x80000000
 
@@ -31,13 +44,14 @@ DT_SINGLELINE = 0x20
 APP_NAME = "HitboxViewerWindow"
 
 WHITE = rgb(255, 255, 255)
+PIVOT_SIZE = 12
 
 
 def wndProc(hwnd, message, wParam, lParam):
-	WM_DESTROY = 0x0002
 	if message == WM_DESTROY:
 		user32.PostQuitMessage(0)
 		return 0
+
 	"""
 	# experiment with capturing mouse clicks on the overlay window
 	# (this only seems to work if WS_EX_LAYERED is turned off)
@@ -71,18 +85,20 @@ class Renderer:
 		# control list used in for loops when drawing thick lines
 		# (so we aren't creating new list objects all day)
 		self.thicknessRange = range(0, self.lineThickness)
-
+		
+		# Direct3D created objects
 		self.hwnd = None
 		self.wndClass = None
 		self.d3d = None
-		self.device = None
+		self.device = POINTER(IDirect3DDevice9)()
+		self.line = POINTER(ID3DXLine)()
+		self.font = POINTER(ID3DXFont)()
+		self.fillbuf = None
+		self.spareFillbuf = (CUSTOMVERTEX * 4)()
 
-		self.line = None
-		self.font = None
-
-		# reusable resources for drawing primitives/reading hitboxes
-		self.boxvec = (D3DXVECTOR2 * 5) ((0,0), (0,0), (0,0), (0,0), (0,0))
-		self.linevec = (D3DXVECTOR2 * 2) ((0,0), (0,0))
+		# reusable resources for drawing primitives
+		self.boxvec = (D3DXVECTOR2 * 5)() #((0,0), (0,0), (0,0), (0,0), (0,0))
+		self.linevec = (D3DXVECTOR2 * 2)() #((0,0), (0,0))
 		
 		self.left = 0
 		self.top = 0
@@ -96,7 +112,7 @@ class Renderer:
 		self.baseY = 0 # base position onscreen where Y = 0 (i.e., the ground)
 
 		self.updateWindowTickerInterval = tickerInterval
-		self.updateWindowTicker = self.updateWindowTickerInterval
+		self.updateWindowTicker = tickerInterval # count down, reset at 0
 		
 		# frame ticker at the bottom of the screen
 		self.frameCounter = 1
@@ -145,7 +161,13 @@ class Renderer:
 
 	def release(self):
 		print "Releasing Renderer"
-		elements = [self.line, self.font, self.device, self.d3d]
+		elements = [
+			self.fillbuf,
+			self.line,
+			self.font,
+			self.device,
+			self.d3d,
+		]
 		for element in elements:
 			if element is not None:
 				print "Releasing %s in Renderer" % element
@@ -253,12 +275,43 @@ class Renderer:
 		user32.UpdateWindow(self.hwnd)
 	
 	
+	# initialize FVF vertex buffer used for drawing box fills
+	def createVertexBuffer(self):
+		vertexBuf = POINTER(IDirect3DVertexBuffer9)()
+		#vertexBuf = IDirect3DVertexBuffer9()
+		ppVertexBuf = cast(pointer(vertexBuf), POINTER(c_void_p))
+		#ppVertexBuf = POINTER(POINTER(IDirect3DVertexBuffer9))(pVertexBuf)
+		vertexBufLength = 4
+		vertexBufSize = sizeof(CUSTOMVERTEX) * vertexBufLength
+
+		self.device.CreateVertexBuffer(
+			vertexBufSize,
+			0, # usage
+			D3D_VERTEX_FORMAT,
+			D3DPOOL_MANAGED, # store buffer in video RAM
+			#cast(ppVertexBuf, POINTER(POINTER(c_void))),
+			ppVertexBuf.contents,
+			None) # pSharedHandle; THIS MUST ALWAYS BE NULL
+		self.fillbuf = vertexBuf
+		ppVertexBuf2 = pointer(c_void_p()) # void**
+		vertexBuf.Lock(0, 0, ppVertexBuf2, 0)
+		
+		# initialize vertex buffer here
+		for i in range(0, vertexBufLength):
+			self.spareFillbuf[i].x     = 0.0
+			self.spareFillbuf[i].y     = 0.0
+			self.spareFillbuf[i].z     = 0.0 # we don't need this
+			self.spareFillbuf[i].rhw   = 1.0
+			self.spareFillbuf[i].color = WHITE # filler value
+		
+		memmove(ppVertexBuf2.contents, byref(self.spareFillbuf), vertexBufSize)
+		vertexBuf.Unlock()
+	
+
 	def createPrimitives(self):
-		self.line = POINTER(ID3DXLine)()
 		d3dxdll.D3DXCreateLine(self.device, byref(self.line))
 		self.line.SetWidth(1)
 
-		self.font = POINTER(ID3DXFont)()
 		d3dxdll.D3DXCreateFontW(
 			self.device,
 			14, # font width
@@ -272,8 +325,10 @@ class Renderer:
 			0, # font pitch and family index
 			LPCWSTR(unicode("Consolas")), # font typeface
 			byref(self.font))
-
-
+		
+		self.createVertexBuffer()
+	
+	
 	def initDirect3D(self):
 		self.setDimensions()
 		params = D3DPRESENT_PARAMETERS()
@@ -290,7 +345,6 @@ class Renderer:
 		params.MultiSampleType = 0 # D3DMULTISAMPLE_NONE; no multisampling
 		
 		self.d3d = POINTER(IDirect3D9)(address)
-		self.device = POINTER(IDirect3DDevice9)()
 
 		useHardware = True
 		vertexProcessing = 0
@@ -298,13 +352,19 @@ class Renderer:
 			vertexProcessing = D3DCREATE.HARDWARE_VERTEXPROCESSING
 		else:
 			vertexProcessing = D3DCREATE.SOFTWARE_VERTEXPROCESSING
-		self.d3d.CreateDevice(0, D3DDEVTYPE.HAL, self.hwnd,
-		vertexProcessing, byref(params), byref(self.device))
+		self.d3d.CreateDevice(
+			0,
+			D3DDEVTYPE.HAL,
+			self.hwnd,
+			vertexProcessing,
+			byref(params),
+			byref(self.device))
 
 		# add error checking on all API calls here
 		self.device.SetRenderState(D3DRS_ZENABLE, False)
 		self.device.SetRenderState(D3DRS_LIGHTING, False)
 		self.device.SetRenderState(D3DRS_CULLMODE, D3DCULL.NONE)
+		self.device.SetFVF(D3D_VERTEX_FORMAT)
 
 		self.createPrimitives()
 
@@ -353,7 +413,6 @@ class Renderer:
 	
 
 	def drawPivot(self, x, y):
-		PIVOT_SIZE = 12
 		self.line.SetWidth(self.lineThickness)
 		y = y - (self.lineThickness >> 1)
 		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, WHITE)
@@ -361,21 +420,29 @@ class Renderer:
 		self.line.SetWidth(1)
 	
 
-	# draw the fill color inside a rectangle
-	# SLOW AS HELL, but functional for now
+	# fancy new fill drawing function
 	def drawFill(self, left, top, right, bottom, color):
-		self.line.SetWidth(1)
-		points = self.linevec
-		points[0].x = left
-		points[1].x = right
+		spare = self.spareFillbuf
+		ppVertexBuf = pointer(c_void_p()) # void**
+		vertexBufLength = len(spare)
+		vertexBufSize = vertexBufLength * sizeof(CUSTOMVERTEX)
 
-		for row in range(max(top, 0), min(bottom + 1, self.height - 1)):
-			points[0].y = row
-			points[1].y = row
-			self.line.Draw(points, len(points), color)
-
-		self.line.SetWidth(self.lineThickness)
-	
+		# add filling buffer w/coords+color and DrawPrimitive call here
+		coords = (
+			(left, top   ), (right, top   ),
+			(left, bottom), (right, bottom))
+		for i in range(vertexBufLength):
+			newX, newY = coords[i]
+			spare[i].x = float(newX)
+			spare[i].y = float(newY)
+			spare[i].color = color
+		
+		self.device.SetStreamSource(0, self.fillbuf, 0, sizeof(CUSTOMVERTEX))
+		self.fillbuf.Lock(0, 0, ppVertexBuf, 0)
+		memmove(ppVertexBuf.contents, byref(spare), vertexBufSize)
+		self.fillbuf.Unlock()
+		self.device.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2)
+		
 
 	def drawBoxBorders(self, left, top, right, bottom, color):
 		pointsLength = len(self.boxvec)
@@ -401,15 +468,13 @@ class Renderer:
 		width, height = width * self.scale, height * self.scale
 		right, top    = left + int(width - 1), bottom - int(height - 1)
 		points = self.boxToVector(left, top, right, bottom)
-		transparentColor = color & 0x00FFFFFF
-		borderColor = color | (0xFF << 24)
-		innerColor = transparentColor | (0x40 << 24)
+		borderColor = changeAlpha(color, 0xFF)
+		innerColor = changeAlpha(color, 0x08)
 		
 		if self.drawFilling:
 			self.drawFill(left, top, right, bottom, innerColor)
 		if self.drawBorders:
 			self.drawBoxBorders(left, top, right, bottom, borderColor)
-			#self.line.Draw(points, len(points), borderColor)
 
 
 	def drawText(self, x, y, width, height, color, text):
@@ -540,6 +605,7 @@ class Renderer:
 			self.updateWindowTicker -= 1
 		if self.syncedMode:
 			self.pumpMessages()
+
 		"""
 		# experiment with checking window focus
 		if user32.GetForegroundWindow() == self.viewer.kof_window:

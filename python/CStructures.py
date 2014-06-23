@@ -1,9 +1,10 @@
 from ctypes import *
 from ctypes.wintypes import *
 
-BYTE      = c_ubyte
-WORD      = c_ushort
-DWORD     = c_ulong
+BYTE      = c_uint8
+WORD      = c_uint16
+DWORD     = c_uint32
+DWORDLONG = c_uint64
 LPBYTE    = POINTER(c_ubyte)
 LPTSTR    = POINTER(c_char) 
 HANDLE    = c_void_p
@@ -13,15 +14,27 @@ UINT_PTR  = c_ulong
 SIZE_T    = c_ulong
 
 
+WNDPROC = WINFUNCTYPE(c_long, c_int, c_uint, c_int, c_int)
+
+
+# based on vertex format D3DFVF_XYZRHW | D3DFVF_DIFFUSE
+class CUSTOMVERTEX(Structure):
+	_fields_ = [
+	("x",     c_float),
+	("y",     c_float),
+	("z",     c_float),
+	("rhw",   c_float),
+	("color", DWORD),
+]
+
+
 class MARGINS(Structure):
 	_fields_ = [
 	("cxLeftWidth",    c_int),
 	("cxRightWidth",   c_int),
 	("cyTopHeight",    c_int),
-	("cyBottomHeight", c_int) ]
-
-
-WNDPROC = WINFUNCTYPE(c_long, c_int, c_uint, c_int, c_int)
+	("cyBottomHeight", c_int),
+]
 
 
 class WNDCLASS(Structure):
@@ -35,14 +48,16 @@ class WNDCLASS(Structure):
 	("hCursor",       c_int),
 	("hbrBackground", c_int),
 	("lpszMenuName",  c_char_p),
-	("lpszClassName", c_char_p) ]
+	("lpszClassName", c_char_p),
+]
 
 
 class SECURITY_ATTRIBUTES(Structure):
 	_fields_ = [
 	("Length",        c_ulong),
 	("SecDescriptor", LPVOID),
-	("InheritHandle", BOOL) ]
+	("InheritHandle", BOOL),
+]
 
 
 # Offsets that represent not-yet-understood values are named:
@@ -87,7 +102,7 @@ class PLAYER(Structure):
 	("Facing",   c_byte), # left/right facing
 	("Gap15",    BYTE * 0x07),
 	("Off_1ACh", c_byte),
-	]
+]
 
 
 class GAME_CAMERA(Structure):
@@ -98,7 +113,7 @@ class GAME_CAMERA(Structure):
 	("Gap2",    BYTE * 0x38),
 	("XScroll", c_float), # camera X scroll offset (initially 0)
 	("YScroll", c_float), # camera Y scroll offset (initially 0)
-	]
+]
 
 
 # hitbox type handled by code block at 0050DC23h-0050DC69h
@@ -119,7 +134,7 @@ HITBOX1._fields_ = [
 	("Height",  c_float), # +18h: 
 	("Flags",   c_uint32), # +1Ch: 
 	# there may be some later fields missing here
-	]
+]
 
 
 # hitbox type handled by code block at 0050EC9Ch-0050ECE2h
@@ -132,4 +147,4 @@ HITBOX2._fields_ = [
 	("Bottom",  c_float),
 	("Width",   c_float),
 	("Height",  c_float),
-	]
+]

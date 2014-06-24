@@ -4,11 +4,10 @@ from ctypes.wintypes import *
 from directx.d3d import *
 from directx.types import *
 from directx.d3dx import *
-#from time import sleep
 
 from Global import *
 from CStructures import *
-from Colors import rgb, changeAlpha
+from Colors import rgb, changeAlpha, printAsARGB
 
 user32 = windll.user32
 kernel32 = windll.kernel32
@@ -17,19 +16,9 @@ d3d = windll.d3d9
 D3D_OK = 0
 WM_DESTROY = 2
 
-D3DRS_ZENABLE  = 7
-D3DRS_LIGHTING = 137
-D3DRS_CULLMODE = 22
-
 D3DPOOL_MANAGED = 1
 
-D3DFVF_XYZRHW     = 0x04
-D3DFVF_DIFFUSE    = 0x40
-D3D_VERTEX_FORMAT = D3DFVF_XYZRHW | D3DFVF_DIFFUSE
-
-D3DPT_LINESTRIP     = 3
-D3DPT_TRIANGLESTRIP = 5
-D3DPT_TRIANGLEFAN   = 6
+D3D_VERTEX_FORMAT = D3DFVF.XYZRHW | D3DFVF.DIFFUSE
 
 WS_EX_TOPMOST     = 0x00000008
 WS_EX_COMPOSITED  = 0x02000000
@@ -300,9 +289,9 @@ class Renderer:
 		for i in range(0, vertexBufLength):
 			self.spareFillbuf[i].x     = 0.0
 			self.spareFillbuf[i].y     = 0.0
-			self.spareFillbuf[i].z     = 0.0 # we don't need this
+			self.spareFillbuf[i].z     = 1.0 # we don't need this
 			self.spareFillbuf[i].rhw   = 1.0
-			self.spareFillbuf[i].color = WHITE # filler value
+			self.spareFillbuf[i].color = 0 # clear
 		
 		memmove(ppVertexBuf2.contents, byref(self.spareFillbuf), vertexBufSize)
 		vertexBuf.Unlock()
@@ -338,11 +327,11 @@ class Renderer:
 			raise Exception("Direct3DCreate9: %s" % self.viewer.getLastError())
 		
 		params.Windowed = True
-		params.SwapEffect = D3DSWAPEFFECT.FLIP
+		params.SwapEffect = D3DSWAPEFFECT.DISCARD
 		params.BackBufferWidth = self.width
 		params.BackBufferHeight = self.height
 		params.BackBufferFormat = D3DFORMAT.A8R8G8B8 # ARGB, 32bpp
-		params.MultiSampleType = 0 # D3DMULTISAMPLE_NONE; no multisampling
+		#params.MultiSampleType = 0 # D3DMULTISAMPLE_NONE; no multisampling
 		
 		self.d3d = POINTER(IDirect3D9)(address)
 
@@ -361,10 +350,28 @@ class Renderer:
 			byref(self.device))
 
 		# add error checking on all API calls here
-		self.device.SetRenderState(D3DRS_ZENABLE, False)
-		self.device.SetRenderState(D3DRS_LIGHTING, False)
-		self.device.SetRenderState(D3DRS_CULLMODE, D3DCULL.NONE)
+		renderStateOptions = (
+			(D3DRS.ZENABLE, False),
+			(D3DRS.LIGHTING, False),
+			(D3DRS.CULLMODE, D3DCULL.NONE),
+			(D3DRS.ALPHABLENDENABLE, True),
+			(D3DRS.SRCBLEND, D3DBLEND.SRCALPHA),
+			(D3DRS.DESTBLEND, D3DBLEND.INVSRCALPHA),
+			(D3DRS.BLENDOP, D3DBLENDOP.ADD),
+			(D3DRS.SEPARATEALPHABLENDENABLE, True),
+			(D3DRS.SRCBLENDALPHA, D3DBLEND.SRCALPHA),
+			(D3DRS.DESTBLENDALPHA, D3DBLEND.INVSRCALPHA),
+			(D3DRS.BLENDOPALPHA, D3DBLENDOP.MAX),
+		)
+		textureStageStateOptions = (
+			#(), # currently unused
+		)
+
 		self.device.SetFVF(D3D_VERTEX_FORMAT)
+		for renderState, rsValue in renderStateOptions:
+			self.device.SetRenderState(renderState, rsValue)
+		for tsState, tssValue in textureStageStateOptions:
+			self.device.SetTextureStageState(0, tsState, tssValue)
 
 		self.createPrimitives()
 
@@ -389,7 +396,7 @@ class Renderer:
 	def beginScene(self):
 		# TODO: add checks for game window being moved around here
 		clearColor = 0 # clear
-		self.device.Clear(0, None, D3DCLEAR.TARGET, clearColor, 1, 0)
+		self.device.Clear(0, None, D3DCLEAR.TARGET, clearColor, 1.0, 0)
 		self.device.BeginScene()
 	
 
@@ -398,13 +405,6 @@ class Renderer:
 		self.device.Present(None, None, None, None)
 
 
-	def setDirect3DFn(self):
-		def setDirect3D(address):
-			self.d3d = POINTER(IDirect3D9)(address)
-			print "Renderer.d3d is now %s" % self.d3d
-		return setDirect3D
-	
-	
 	def drawLine(self, x1, y1, x2, y2, color):
 		points = self.linevec
 		points[0].x, points[0].y = (x1, y1)
@@ -427,7 +427,6 @@ class Renderer:
 		vertexBufLength = len(spare)
 		vertexBufSize = vertexBufLength * sizeof(CUSTOMVERTEX)
 
-		# add filling buffer w/coords+color and DrawPrimitive call here
 		coords = (
 			(left, top   ), (right, top   ),
 			(left, bottom), (right, bottom))
@@ -441,7 +440,7 @@ class Renderer:
 		self.fillbuf.Lock(0, 0, ppVertexBuf, 0)
 		memmove(ppVertexBuf.contents, byref(spare), vertexBufSize)
 		self.fillbuf.Unlock()
-		self.device.DrawPrimitive(D3DPT_TRIANGLESTRIP, 0, 2)
+		self.device.DrawPrimitive(D3DPT.TRIANGLESTRIP, 0, 2)
 		
 
 	def drawBoxBorders(self, left, top, right, bottom, color):
@@ -469,7 +468,7 @@ class Renderer:
 		right, top    = left + int(width - 1), bottom - int(height - 1)
 		points = self.boxToVector(left, top, right, bottom)
 		borderColor = changeAlpha(color, 0xFF)
-		innerColor = changeAlpha(color, 0x08)
+		innerColor = changeAlpha(color, 0x60)
 		
 		if self.drawFilling:
 			self.drawFill(left, top, right, bottom, innerColor)
@@ -614,10 +613,6 @@ class Renderer:
 			print "I AM DEPRESSED"
 		#"""
 	
-
-	def runSynchronous(self):
-		pass
-
 
 	def runAsynchronous(self):
 		while True:

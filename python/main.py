@@ -20,7 +20,6 @@ class Main:
 		self.hooks = utils.hook_container()
 		self.viewer = HitboxViewer(self)
 		self.renderer = Renderer(self)
-		self.passes = 0 # control var for initialCallbackHandler
 	
 
 	def runSynchronous(self):
@@ -28,13 +27,8 @@ class Main:
 			self.renderer.renderFrame()
 			return DBG_CONTINUE
 
-		def initialCallbackHandler(dbg):
-			desc = "Findin' hitboxes!"
-			if self.passes != 0:
-				return DBG_CONTINUE
-			dbg.bp_set(FRAME_BP, description=desc, handler=renderFrame)
-			dbg.bp_del(START_BP)
-			self.passes = 1
+		def startingHandler(dbg):
+			dbg.bp_set(FRAME_BP, handler=renderFrame)
 			stub = lambda dbg: DBG_CONTINUE # "dummy" HW breakpoint handler
 			dbg.set_callback(EXCEPTION_BREAKPOINT, stub)
 			return DBG_CONTINUE
@@ -42,9 +36,8 @@ class Main:
 		self.viewer.findGame()
 		self.renderer.makeWindow()
 		self.renderer.initDirect3D()
-		self.dbg.set_callback(EXCEPTION_BREAKPOINT, initialCallbackHandler)
 		self.dbg.attach(self.viewer.kof_pid)
-		self.dbg.bp_set(START_BP)
+		self.dbg.bp_set(START_BP, restore=False, handler=startingHandler)
 		self.dbg.run()
 
 

@@ -1,7 +1,7 @@
 from ctypes import *
 from ctypes.wintypes import *
-from time import sleep, clock
 from struct import pack, unpack
+from time import sleep
 from pydbg import *
 from pydbg.defines import *
 
@@ -46,12 +46,6 @@ class HitboxViewer:
 		self.p2 = PLAYER()
 		self.p1_address = 0
 		self.p2_address = 0
-
-		self.time = 0
-		self.ticks = 0
-		self.active = False
-
-		self.breakpoints = {}
 	
 
 	def release(self):
@@ -96,18 +90,6 @@ class HitboxViewer:
 		self.kof_threads = threads
 		return threads
 
-
-	def grabGame(self):
-		if not kernel32.DebugActiveProcess(self.kof_pid):
-			raise Exception("kernel32.DebugActiveProcess: %s" %
-				self.getLastError())
-	
-	
-	def releaseGame(self):
-		if not kernel32.DebugActiveProcessStop(self.kof_pid):
-			raise Exception("kernel32.DebugActiveProcessStop: %s" %
-				self.getLastError())
-	
 
 	def setKOFWindowID(self):
 		KOF_WINDOW_TITLE = "The King of Fighters XIII"
@@ -311,176 +293,6 @@ class HitboxViewer:
 		return buffer.value
 	
 	
-	# set a breakpoint
-	def setBP(self, address, handler=None):
-		if self.breakpoints.has_key(address):
-			print "Address 0x%08X already has a breakpoint set." % address
-			return False
-
-		original = self.readUnsignedByte(address)
-		self.writeUnsignedByte(address, INT_3)
-		self.breakpoints[address] = (hex(address), original, handler)
-		return True
-
-	
-	def unsetBP(self, address):
-		if not self.breakpoints.has_key(address):
-			return False
-		elif self.readUnsignedByte(address) != INT_3:
-			print "No INT 3 opcode found at address 0x%08X" % address
-			return False
-		
-		original = self.breakpoints[address][1]
-		self.writeUnsignedByte(address, original)
-		del self.breakpoints[address]
-		return True
-
-
-	def eraseBPs(self):
-		count = len(self.breakpoints)
-		
-		for address in self.breakpoints.keys():
-			self.unsetBP(address)
-		
-		print "Removed all %i breakpoints." % count
-
-
-	def openThread(self, tid):
-		THREAD_ALL_ACCESS = 0x001F03FF
-		thread = kernel32.OpenThread(THREAD_ALL_ACCESS, None, tid)
-		return thread
-
-
-	def getThreadContext(self, tid):
-		context = CONTEXT()
-		CONTEXT_FULL = 0x00010007
-		CONTEXT_DEBUG_REGISTERS = 0x00010010
-		context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS
-
-		thread = self.openThread(tid)
-		if kernel32.GetThreadContext(thread, byref(context)):
-			kernel32.CloseHandle(thread)
-			return context
-		else:
-			raise Exception("kernel32.GetThreadContext: %s" %
-				self.getLastError())
-
-
-	def printContext(self, tid, context, display=["general"]):
-		def printRegisterSet(regs):
-			for reg in regs:
-				regName, regValue, regWidth = reg
-				formatStr = regName + "\t= 0x%0" + str(regWidth) + "X"
-				print formatStr % regValue
-
-		c = context
-		generalRegs = (
-			("EAX", c.Eax, 8),
-			("EBX", c.Ebx, 8),
-			("ECX", c.Ecx, 8),
-			("EDX", c.Edx, 8),
-			("ESI", c.Esi, 8),
-			("EDI", c.Edi, 8),
-			("ESP", c.Esp, 8),
-			("EBP", c.Ebp, 8),
-			("EIP", c.Eip, 8),
-			("EFLAGS", c.EFlags, 8),
-			)
-		segmentRegs = (
-			("CS", c.SegCs, 4),
-			("DS", c.SegDs, 4),
-			("ES", c.SegEs, 4),
-			("FS", c.SegFs, 4),
-			("GS", c.SegGs, 4),
-			("SS", c.SegSs, 4),
-			)
-		debugRegs = (
-			("DR0", c.Dr0, 8),
-			("DR1", c.Dr1, 8),
-			("DR2", c.Dr2, 8),
-			("DR3", c.Dr3, 8),
-			("DR6", c.Dr6, 8),
-			("DR7", c.Dr7, 8),
-			)
-		allRegs = {
-			"general" : generalRegs,
-			"segment" : segmentRegs,
-			"debug"   : debugRegs
-			}
-		
-		if len(display) == 0:
-			print "Name the register set(s) that you want to see " + \
-			"by using the \'display\' parameter."
-			return
-
-		print "Register values in context on thread 0x%x:" % tid
-		for regSet in display:
-			printRegisterSet(allRegs[regSet.lower()])
-
-	
-	# detect and handle a breakpoint according to its address
-	def handleBreakpoint(self, address, tid, context):
-		if self.breakpoints.has_key(address):
-			handler = self.breakpoints[address][2]
-		else:
-			handler = None
-
-		result = False
-		if handler is not None:
-			print "Running handler for breakpoint 0x%x in thread 0x%x" % \
-				(address, tid)
-			result = handler(address, tid, context)
-		else:
-			print "Self-handling breakpoint at 0x%x in thread 0x%x" % \
-				(address, tid)
-			self.printContext(tid, context)
-			result = True
-
-		return result
-
-	
-	#def handleDebugEvent(self, timeout=0xFFFFFFFF): # INFINITE
-	def handleDebugEvent(self, timeout=3000):
-		debugEvent = DEBUG_EVENT()
-		continueStatus = 0x00010002 # DBG_CONTINUE
-
-		if kernel32.WaitForDebugEvent(byref(debugEvent), timeout):
-			self.active = False
-			eventCode = debugEvent.dwDebugEventCode
-			eventThread = debugEvent.dwThreadId
-			#print "Caught debug event %i on thread %s" % \
-			#	(eventCode, hex(eventThread))
-			
-			# is the debug event an exception type?
-			EXCEPTION_DEBUG_EVENT = 0x01
-			EXCEPTION_BREAKPOINT = 0x80000003
-
-			if eventCode == EXCEPTION_DEBUG_EVENT:
-				exception = debugEvent.u.Exception.ExceptionRecord
-				exceptionCode = exception.ExceptionCode
-				exceptionAddress = exception.ExceptionAddress
-				#print "Hit debug event at 0x%x: 0x%x" % \
-				#	(exceptionAddress, exceptionCode)
-
-				# did we hit a breakpoint that we set earlier?
-				# note: worry about other exception types later
-				if exceptionCode == EXCEPTION_BREAKPOINT:
-					print "- Hit breakpoint at 0x%x" % exceptionAddress
-					threadContext = self.getThreadContext(eventThread)
-					result = self.handleBreakpoint(
-						exceptionAddress, eventThread, threadContext)
-					self.unsetBP(exceptionAddress)
-
-			kernel32.ContinueDebugEvent(
-				debugEvent.dwProcessId,
-				debugEvent.dwThreadId,
-				continueStatus)
-		else:
-			self.active = False
-			raise Exception("kernel32.WaitForDebugEvent: %s" %
-				self.getLastError())
-	
-
 	def update(self):
 		# update camera struct
 		self._RPM(CAMERA_PTR, self.camera)

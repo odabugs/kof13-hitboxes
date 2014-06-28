@@ -156,7 +156,11 @@ specialBoxIDs = {
 		0x7A : BOX_PROJ_ATTACK, # qcf,qcf+BD (neomax) (last hit)
 	},
 	IDbyName("Daimon") : {
-		#,
+		0x5A : BOX_THROW,       # hcb,f+A or C
+		0x5B : BOX_THROW,       # hcb,f+AC
+		0x61 : BOX_THROW,       # hcb,hcb+A or C
+		0x63 : BOX_THROW,       # hcb,hcb+AC
+		0x63 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Iori") : {
 		#0x1A : 				# This is the ID of the hurtbox on the startup of qcb+BD. Presumably it denotes projectile invincibility. Later on it becomes 0x11, which is the default.
@@ -175,7 +179,14 @@ specialBoxIDs = {
 		0x5D : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Vice") : {
-		#,
+		0x56 : BOX_THROW,       # hcb,f+A or C
+		0x57 : BOX_THROW,       # hcb,f+AC
+		0x58 : BOX_THROW,       # hcb,hcb+B or D
+		0x59 : BOX_THROW,       # hcb,hcb+BD
+		0x5A : BOX_THROW,       # C throw, D throw
+		0x5C : BOX_THROW,       # dp+A or C
+		0x5E : BOX_THROW,       # dp+AC
+		0x5F : BOX_THROW,       # hcf,uf,u,d+A or C (midair)
 	},
 	IDbyName("Terry") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -248,7 +259,9 @@ specialBoxIDs = {
 		0x67 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Chin") : {
-		#,
+		0x42 : BOX_PROJ_VULN,   # 
+		0x59 : BOX_THROW,       # C throw, D throw, C throw in either stance
+		0x74 : BOX_PROJ_ATTACK, # qcf,qcf+BD (neomax) (grounded or midair)
 	},
 	IDbyName("Kim") : {
 		0x54 : BOX_THROW,       # C throw, D throw
@@ -257,7 +270,16 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Raiden") : {
-		#,
+		0x3F : BOX_PROJ_VULN,   # 
+		0x41 : BOX_PROJ_VULN,   # 
+		0x52 : BOX_THROW,       # C throw, D throw
+		0x56 : BOX_THROW,       # hcf+B or D
+		0x57 : BOX_THROW,       # hcf+BD
+		0x5D : BOX_THROW,       # hcb,hcb+A or C
+		0x5E : BOX_THROW,       # hcb,hcb+AC
+		0x53 : BOX_PROJ_ATTACK, # qcb+A
+		0x54 : BOX_PROJ_ATTACK, # qcb+C (on hit/block)
+		0x55 : BOX_PROJ_ATTACK, # qcb+AC
 	},
 	IDbyName("Ryo") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -319,7 +341,11 @@ specialBoxIDs = {
 		0x52 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Clark") : {
-		#,
+		0x52 : BOX_THROW,       # hcf+B or D
+		0x53 : BOX_THROW,       # hcf+BD
+		0x5D : BOX_THROW,       # hcb,hcb+A or C
+		0x5F : BOX_THROW,       # hcb,hcb+AC
+		0x61 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Leona") : {
 		0x3F : BOX_PROJ_VULN,   # 

@@ -42,7 +42,7 @@ colorsByBoxType = {
 
 # ID numbers to character names
 charNamesByID = {
-	# ID : Character      ID : Character     ID : Character
+	# ID : Character      ID : Character       ID : Character
 	0x00 : "Elisabeth", 0x01 : "Duo Lon",    0x02 : "Shen",
 	0x03 : "Kyo",       0x04 : "Benimaru",   0x05 : "Daimon",
 	0x06 : "Iori",      0x07 : "Mature",     0x08 : "Vice",
@@ -51,7 +51,7 @@ charNamesByID = {
 	0x0F : "Kim",       0x10 : "Hwa Jai",    0x11 : "Raiden",
 	0x12 : "Ryo",       0x13 : "Robert",     0x14 : "Takuma",
 	0x15 : "Ralf",      0x16 : "Clark",      0x17 : "Leona",
-	0x18 : "Ash",     # 0x19: Unused,        0x1A : Unused,
+	0x18 : "Ash",     # 0x19 : Unused,       0x1A : Unused,
 	0x1B : "Mai",       0x1C : "King",       0x1D : "Yuri",
 	0x1E : "EX Iori",   0x1F : "Billy",      # spacer
 	0x20 : "K\'",       0x21 : "Kula",       0x22 : "Maxima",

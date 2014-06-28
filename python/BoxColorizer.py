@@ -267,7 +267,8 @@ specialBoxIDs = {
 		0x54 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Hwa Jai") : {
-		#,
+		0x6A : BOX_THROW,       # qcf,qcb+A or C (drunk or sober)
+		0x6B : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Raiden") : {
 		0x3F : BOX_PROJ_VULN,   # 

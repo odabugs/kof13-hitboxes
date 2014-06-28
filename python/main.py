@@ -17,7 +17,6 @@ START_BP = 0x0050DB70
 class Main:
 	def __init__(self):
 		self.dbg = pydbg()
-		self.hooks = utils.hook_container()
 		self.viewer = HitboxViewer(self)
 		self.renderer = Renderer(self)
 	
@@ -29,8 +28,6 @@ class Main:
 
 		def startingHandler(dbg):
 			dbg.bp_set(FRAME_BP, handler=renderFrame)
-			stub = lambda dbg: DBG_CONTINUE # "dummy" HW breakpoint handler
-			dbg.set_callback(EXCEPTION_BREAKPOINT, stub)
 			return DBG_CONTINUE
 
 		self.viewer.findGame()
@@ -52,18 +49,21 @@ class Main:
 	def release(self):
 		def releaseDebugger():
 			# remove all set breakpoints/watchpoints
-			#self.dbg.bp_del_all()
+			#self.dbg.bp_del_all() # why doesn't this work?
 			self.dbg.bp_del_hw_all()
 			self.dbg.bp_del_mem_all()
 			print "Cleaned up pydbg instance"
 		
 		print "Releasing Main..."
 		
-		for element in [self.viewer, self.renderer]:
+		releaseDebugger()
+		elements = (
+			self.viewer,
+			self.renderer,
+		)
+		for element in elements:
 			if element is not None:
 				element.release()
-
-		releaseDebugger()
 		
 		print "Released Main"
 	
@@ -72,7 +72,6 @@ m = Main()
 v = m.viewer
 r = m.renderer
 d = m.dbg
-h = m.hooks
 
 
 def launch():

@@ -16,6 +16,32 @@ def dictWithout(d, keys):
 	return result
 
 
+def uniqueItemsIn(sequence):
+	return set([item for item in sequence])
+
+def identity(x):
+	return x
+
+def uniqueKeysIn(d):
+	return uniqueItemsIn(d.keys())
+
+def uniqueValuesIn(d):
+	return uniqueItemsIn(d.values())
+
+def reverseDict(d, keyFn=identity, valFn=identity):
+	if len(uniqueValuesIn(d)) < len(d):
+		raise ValueError("Dict must not have duplicate values to use as keys.")
+
+	result = {}
+	for k, v in d.iteritems():
+		try:
+			result[valFn(v)] = keyFn(k)
+		except TypeError as e:
+			raise TypeError("The value " + repr(valFn(v)) + " is not hashable.")
+	return result
+
+
+
 # return the union of all dicts passed,
 # with the values in later dicts passed taking priority where keys conflict
 def merge(*dicts):

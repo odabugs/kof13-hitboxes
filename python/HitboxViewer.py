@@ -15,7 +15,7 @@ kernel32 = windll.kernel32
 # these addresses contain pointers to the player 1 and
 # player 2 structs respectively
 P1_PTR = 0x008320A0
-P2_PTR = 0x008320A4
+P2_PTR = P1_PTR + 4
 
 # camera structure (always seems to be initialized at this address?)
 CAMERA_PTR = 0x0082F890
@@ -23,14 +23,22 @@ CAMERA_PTR = 0x0082F890
 PLAYER_X_SHAKE = CAMERA_PTR + 0x13C
 PLAYER_Y_SHAKE = CAMERA_PTR + 0x140
 
-INT_3 = 0xCC # int 3 opcode in x86 assembly
+# memory locations to read player 1's 1st, 2nd and 3rd character
+P1_1ST = 0x00831E1C
+P1_2ND = P1_1ST + 0x1C
+P1_3RD = P1_2ND + 0x1C
+# memory locations to read player 2's 1st, 2nd and 3rd character
+P2_1ST = 0x00831F20
+P2_2ND = P2_1ST + 0x1C
+P2_3RD = P2_2ND + 0x1C
+# locations to read players' current characters while ingame
+P1_CURRENT_CHAR = 0x00831DF4
+P2_CURRENT_CHAR = 0x00831EF8
 
 
 class HitboxViewer:
 	def __init__(self, environment):
 		self.env = environment
-		self.dbg = self.env.dbg
-		self.hooks = self.env.hooks
 
 		self.kof_window = 0 # window ID for main KOF window
 		self.kof_pid = 0 # KOF process ID
@@ -45,8 +53,11 @@ class HitboxViewer:
 		self.p1 = PLAYER()
 		self.p2 = PLAYER()
 		self.p1_address = 0
-		self.p2_address = 0
-	
+		self.p2_address = 0	
+		self.p1_current = -1 # 0 is a valid character ID (it's Elisabeth)
+		self.p2_current = -1
+		self.p1_team = [-1, -1, -1]
+		self.p2_team = [-1, -1, -1]
 
 	def release(self):
 		print "Releasing HitboxViewer"
@@ -300,3 +311,16 @@ class HitboxViewer:
 		# update player structs
 		self._RPM(self.p1_address, self.p1)
 		self._RPM(self.p2_address, self.p2)
+
+		# update players' current characters
+		readUint = self.readUnsignedDword
+		self.p1_current = readUint(P1_CURRENT_CHAR)
+		self.p2_current = readUint(P2_CURRENT_CHAR)
+
+		# update players' full team picks
+		self.p1_team[0] = readUint(P1_1ST)
+		self.p1_team[1] = readUint(P1_2ND)
+		self.p1_team[2] = readUint(P1_3RD)
+		self.p2_team[0] = readUint(P2_1ST)
+		self.p2_team[1] = readUint(P2_2ND)
+		self.p2_team[2] = readUint(P2_3RD)

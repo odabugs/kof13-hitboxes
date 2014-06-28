@@ -132,7 +132,8 @@ HITBOX1._fields_ = [
 	("Bottom",  c_float), # +10h: Y origin of hitbox (bottom side)
 	("Width",   c_float), # +14h: 
 	("Height",  c_float), # +18h: 
-	("Flags",   c_uint32), # +1Ch: 
+	("Gap1",    BYTE*4),  # +1C through 1F
+	("BoxID",   c_uint8), # +20h: 
 	# there may be some later fields missing here
 ]
 
@@ -147,4 +148,6 @@ HITBOX2._fields_ = [
 	("Bottom",  c_float),
 	("Width",   c_float),
 	("Height",  c_float),
+	("Gap1",    BYTE * 4),
+	("BoxID",   c_uint8), # 
 ]

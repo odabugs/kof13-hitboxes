@@ -7,17 +7,16 @@ from directx.d3dx import *
 
 from Global import *
 from CStructures import *
-from Colors import rgb, changeAlpha, printAsARGB
+from Colors import rgb, changeAlpha, colorByName
+from BoxColorizer import fixedColor, attackColorizer, nameByID
 
 user32 = windll.user32
 kernel32 = windll.kernel32
 d3d = windll.d3d9
 
-D3D_OK = 0
+S_OK = 0
 WM_DESTROY = 2
-
-D3DPOOL_MANAGED = 1
-
+# our vertexes need only 2D position onscreen and color
 D3D_VERTEX_FORMAT = D3DFVF.XYZRHW | D3DFVF.DIFFUSE
 
 WS_EX_TOPMOST     = 0x00000008
@@ -32,8 +31,8 @@ DT_NOCLIP = 0x100
 DT_SINGLELINE = 0x20
 APP_NAME = "HitboxViewerWindow"
 
-WHITE = rgb(255, 255, 255)
 PIVOT_SIZE = 12
+WHITE = rgb(255, 255, 255)
 
 
 def wndProc(hwnd, message, wParam, lParam):
@@ -63,6 +62,7 @@ class Renderer:
 		self.p2 = self.viewer.p2
 		self.windowsMessage = MSG()
 
+		self.annotations = argvContains("-annotate")
 		self.drawFilling = argvContains("-usefill")
 		self.drawBorders = not argvContains("-noborders")
 		self.drawPivots  = not argvContains("-nopivots")
@@ -110,30 +110,34 @@ class Renderer:
 		# buffer structures for reading hitbox data from memory
 		boxbuf1, boxbuf2 = HITBOX1(), HITBOX2()
 		# structure of p1addresses/p2addresses:
-		# (address, draw color, buffer object, pointer read offset)
+		# (player, pointer, colorizer, buffer object, pointer read offset)
 		p1addresses = (
 			# vulnerable boxes
-			(0x007EAC2C, 0x0000FF, boxbuf1, 0),
+			(1, 0x007EAC2C, fixedColor(0x0000FF), boxbuf1, 0),
 			# collision box
-			(0x007EAC08, 0x00FFFF, boxbuf2, 8),
+			(1, 0x007EAC08, fixedColor(0x00FFFF), boxbuf2, 8),
 			# attack boxes, projectile boxes, normal throws
-			(0x007EAC14, 0xFF0000, boxbuf1, 0),
+			(1, 0x007EAC14, attackColorizer, boxbuf1, 0),
+			#(1, 0x007EAC14, fixedColor(0xFF0000), boxbuf1, 0),
 			# armor and guard/block
-			(0x007EAC20, 0x00FF00, boxbuf1, 0),
+			(1, 0x007EAC20, fixedColor(0x00FF00), boxbuf1, 0),
 			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
-			(0x007EAC38, 0xFFFF00, boxbuf2, 8),
+			(1, 0x007EAC38, fixedColor(0xC0C0C0), boxbuf2, 8),
+			#(1, 0x007EAC38, fixedColor(0xFFFF00), boxbuf2, 8),
 		)
 		p2addresses = (
 			# vulnerable boxes
-			(0x007EAC68, 0x4040FF, boxbuf1, 0),
+			(2, 0x007EAC68, fixedColor(0x4040FF), boxbuf1, 0),
 			# collision box
-			(0x007EAC44, 0x40FFFF, boxbuf2, 8),
+			(2, 0x007EAC44, fixedColor(0x40FFFF), boxbuf2, 8),
 			# attack boxes, projectile boxes, normal throws
-			(0x007EAC50, 0xFF4040, boxbuf1, 0),
+			(2, 0x007EAC50, attackColorizer, boxbuf1, 0),
+			#(2, 0x007EAC50, fixedColor(0xFF4040), boxbuf1, 0),
 			# armor and guard/block
-			(0x007EAC5C, 0x40FF40, boxbuf1, 0),
+			(2, 0x007EAC5C, fixedColor(0x40FF40), boxbuf1, 0),
 			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
-			(0x007EAC74, 0xFFFF40, boxbuf2, 8),
+			(2, 0x007EAC74, fixedColor(0xC0C0C0), boxbuf2, 8),
+			#(2, 0x007EAC74, fixedColor(0xFFFF40), boxbuf2, 8),
 		)
 
 		# TODO: support configurable draw order based on box type
@@ -246,7 +250,6 @@ class Renderer:
 			raise Exception("user32.CreateWindowExA: %s" %
 				self.viewer.getLastError())
 		
-		S_OK = 0
 		if oledll.Dwmapi.DwmExtendFrameIntoClientArea(self.hwnd,
 		byref(MARGINS(-1, -1, -1, -1))) != S_OK:
 			raise Exception("DwmExtendFrameIntoClientArea: %s" %
@@ -277,7 +280,7 @@ class Renderer:
 			vertexBufSize,
 			0, # usage
 			D3D_VERTEX_FORMAT,
-			D3DPOOL_MANAGED, # store buffer in video RAM
+			D3DPOOL.MANAGED, # store buffer in video RAM
 			#cast(ppVertexBuf, POINTER(POINTER(c_void))),
 			ppVertexBuf.contents,
 			None) # pSharedHandle; THIS MUST ALWAYS BE NULL
@@ -303,7 +306,7 @@ class Renderer:
 
 		d3dxdll.D3DXCreateFontW(
 			self.device,
-			14, # font width
+			12, # font width
 			0, # font height
 			400, # font weight
 			1, # number of mipmap levels
@@ -312,7 +315,7 @@ class Renderer:
 			0, # font rendering precision
 			0, # font rendering quality
 			0, # font pitch and family index
-			LPCWSTR(unicode("Consolas")), # font typeface
+			LPCWSTR(unicode("Verdana")), # font typeface
 			byref(self.font))
 		
 		self.createVertexBuffer()
@@ -468,7 +471,7 @@ class Renderer:
 		right, top    = left + int(width - 1), bottom - int(height - 1)
 		points = self.boxToVector(left, top, right, bottom)
 		borderColor = changeAlpha(color, 0xFF)
-		innerColor = changeAlpha(color, 0x60)
+		innerColor = changeAlpha(color, 0x40)
 		
 		if self.drawFilling:
 			self.drawFill(left, top, right, bottom, innerColor)
@@ -520,7 +523,6 @@ class Renderer:
 
 		destX = self.centerX + round(sourceX * self.scale) + shakeX
 		destY = self.baseY   - round(sourceY * self.scale) + shakeY
-
 		return (int(destX), int(destY))
 
 	
@@ -533,34 +535,45 @@ class Renderer:
 			self.drawPivot(pivot[0], pivot[1])
 	
 
-	def drawSingleHitbox(self, hitbox, color=WHITE, offset=5):
-		def drawBoxAnnotations(left, top, right, bottom, flags, offset):
-			relLeft, relBottom = self.relativeCoords(left, bottom)
-			coordPair = "(%+0.2f, %+0.2f)"
-			coordsFormat = coordPair + "-" + coordPair
-			coords = coordsFormat % (left, bottom, right, top)
-			flagsStr = "flags=0x%08X" % flags
-			result = coords + "; " + flagsStr
-			self.drawText(relLeft, relBottom + offset, 500, 500, color, result)
-		
-		#color = color | (0xFF << 24)
+	def annotateBox(self, left, bottom, right, top, ID, offset, color):
+		relLeft,  relBottom = self.relativeCoords(left,  bottom)
+		relRight, relTop    = self.relativeCoords(right, top   )
+
+		coordPair = "(%+0.2f, %+0.2f)"
+		coordsFormat = coordPair + "-" + coordPair
+		coords = coordsFormat % (left, bottom, right, top)
+		flagsStr = "0x%02X" % ID
+		result = coords + "; " + flagsStr
+		textColor = changeAlpha(color, 255)
+		xPosition = relLeft # annotation starts flush with box's left side
+		#yPosition = relBottom + offset # annotation below box
+		yPosition = relTop - offset # annotation above box
+		self.drawText(xPosition, yPosition, 500, 500, textColor, result)
+
+
+	def drawSingleHitbox(self, character, hitbox, colorizer, offset):
 		left,  bottom = hitbox.Left,  hitbox.Bottom
 		width, height = hitbox.Width, hitbox.Height
+		right, top = left + width, bottom + height
 		if (width <= 0.0 or height <= 0.0 or
 			isnan(left)  or isnan(bottom) or
 			isnan(width) or isnan(height)):
 			return False # box could not be drawn
 		
+		ID = hitbox.BoxID
+		color = colorizer(character, ID)
 		self.drawBoxRelative(left, bottom, width, height, color)
-		#drawBoxAnnotations(left, top, right, bottom, hitbox.Flags, offset)
+		if self.annotations:
+			self.annotateBox(left, bottom, right, top, ID, offset, color)
 		return True # box was drawn
 
 	
-	def drawHitboxList(self, origin, color, boxbuf, readOffset):
+	def drawHitboxList(self, character, origin, colorizer, boxbuf, readOffset):
 		currentBox = boxbuf
 		readToBuffer = self.viewer._RPM
 		readPointer = self.viewer.readUnsignedDword
-		drawBox = lambda o: self.drawSingleHitbox(currentBox, color, o)
+		drawBox = lambda textOffset: self.drawSingleHitbox(
+			character, currentBox, colorizer, textOffset)
 		# the following two lambdas are side effecting on currentBox
 		readNextBoxFrom = lambda address: readToBuffer(address, currentBox)
 		readNextBox = lambda: readNextBoxFrom(currentBox.Next1 + readOffset)
@@ -571,14 +584,13 @@ class Renderer:
 		drawBox(5)
 
 		# read list of successive boxes; stop when we loop back to the first
-		passes, limit = 0, 20
-		offset = 10 # vertical offset so annotation text doesn't overlap
-		#while currentBox.Next1 != base and passes < limit:
-		while currentBox.Next1 != base:
+		passes, limit = 0, readPointer(origin + 4)
+		offset = 10 # text displacement so annotations won't overlap as badly
+		while passes < limit: # while currentBox.Next1 != base:
 			if not (readNextBox() and drawBox(offset)):
 				break
 			passes += 1
-			offset += 5
+			offset += 8
 	
 
 	def renderFrame(self):
@@ -591,8 +603,12 @@ class Renderer:
 		
 		# draw some hitboxes oh boy!!!!
 		for boxDrawingInfo in self.drawAddresses:
-			address, color, boxBuffer, readOffset = boxDrawingInfo
-			self.drawHitboxList(address, color, boxBuffer, readOffset)
+			player, address, colorizer, boxbuf, offset = boxDrawingInfo
+			if player == 1:
+				character = self.viewer.p1_current
+			elif player == 2:
+				character = self.viewer.p2_current
+			self.drawHitboxList(character, address, colorizer, boxbuf, offset)
 
 		# draw player pivot axes
 		if self.drawPivots:
@@ -604,6 +620,11 @@ class Renderer:
 			self.updateWindowTicker -= 1
 		if self.syncedMode:
 			self.pumpMessages()
+
+		#print "p1 current char is " + nameByID(self.viewer.p1_current)
+		#print "p2 current char is " + nameByID(self.viewer.p2_current)
+		#print "p1 team is " + repr(map(nameByID, self.viewer.p1_team))
+		#print "p2 team is " + repr(map(nameByID, self.viewer.p2_team))
 
 		"""
 		# experiment with checking window focus

@@ -168,10 +168,12 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Chin") : {
-		#,
+		0x42 : BOX_PROJ_VULN,   # 
+		0x59 : BOX_THROW,       # C throw, D throw, C throw in either stance
+		0x74 : BOX_PROJ_ATTACK, # qcf,qcf+BD (neomax) (grounded or midair)
 	},
 	IDbyName("Kim") : {
-		#,
+		0x54 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Hwa Jai") : {
 		#,
@@ -189,7 +191,14 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Ralf") : {
-		#,
+		0x00 : BOX_PROJ_VULN,   # 
+		0x40 : BOX_PROJ_VULN,   # 
+		0x41 : BOX_PROJ_VULN,   # 
+		0x52 : BOX_THROW,       # C throw, D throw
+		# should these count as projectile boxes?
+		#0x5A : BOX_PROJ_ATTACK, # qcb+A
+		#0x5B : BOX_PROJ_ATTACK, # qcb+C
+		#0x5C : BOX_PROJ_ATTACK, # qcb+AC
 	},
 	IDbyName("Clark") : {
 		0x52 : BOX_THROW,       # hcf+B or D

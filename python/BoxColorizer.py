@@ -496,9 +496,6 @@ specialBoxIDs = {
 		0x89 : BOX_PROJ_ATTACK, # qcf,qcf+ A or C
 		0x52 : BOX_THROW,       # C throw, D throw (same as regular Kyo)
 	},
-	#IDbyName("EX Iori") : {
-	#	#,
-	#},
 	IDbyName("Mr. Karate") : {
 		0x3F : BOX_PROJ_VULN,   # 
 		0x40 : BOX_PROJ_VULN,   # 
@@ -559,6 +556,7 @@ specialBoxIDs = {
 		0x58 : BOX_PROJ_ATTACK, # qcf+A
 		0x5B : BOX_PROJ_ATTACK, # qcf+C
 		0x5E : BOX_PROJ_ATTACK, # qcf+AC
+		0x5F : BOX_PROJ_ATTACK, # qcf+AC (second part)
 		0x91 : BOX_PROJ_ATTACK, # qcf,qcf+A or C
 		0x86 : BOX_THROW,		# hcb,hcb+A or C
 		0x87 : BOX_THROW,		# hcb,hcb+AC

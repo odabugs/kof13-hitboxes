@@ -494,7 +494,8 @@ class Renderer:
 	def baseYOffset(self):
 		yOffsetsByRes = {
 			( 640,  360) : 34,
-			( 854,  480) : 45,
+			#( 854,  480) : 45,
+			( 854,  480) : 49,
 			( 960,  540) : 50,
 			(1024,  576) : 54,
 			(1280,  720) : 67,
@@ -522,7 +523,7 @@ class Renderer:
 		shakeY = round(cam.YShake * self.scale)
 
 		destX = self.centerX + round(sourceX * self.scale) + shakeX
-		destY = self.baseY   - round(sourceY * self.scale) + shakeY
+		destY = self.baseY   - round(sourceY * self.scale) - shakeY
 		return (int(destX), int(destY))
 
 	

@@ -546,8 +546,8 @@ class Renderer:
 		result = coords + "; " + flagsStr
 		textColor = changeAlpha(color, 255)
 		xPosition = relLeft # annotation starts flush with box's left side
-		#yPosition = relBottom + offset # annotation below box
-		yPosition = relTop - offset # annotation above box
+		yPosition = relBottom + offset # annotation below box
+		#yPosition = relTop - offset # annotation above box
 		self.drawText(xPosition, yPosition, 500, 500, textColor, result)
 
 

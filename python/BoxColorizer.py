@@ -79,10 +79,19 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Duo Lon") : {
-		#,
+		0x40 : BOX_PROJ_VULN,   # 
+		0x41 : BOX_PROJ_VULN,   # 
+		0x5C : BOX_THROW,       # C throw, D throw
+		0x64 : BOX_PROJ_ATTACK, # qcb+A or C
+		0x65 : BOX_PROJ_ATTACK, # qcb+AC
+		0x6E : BOX_THROW,       # hcb,hcb+AC (neomax)
 	},
 	IDbyName("Shen") : {
-		#,
+		0x42 : BOX_PROJ_VULN,   # qcb+C; C,A,B,C
+		0x5B : BOX_THROW,       # hcb,f+A or C or AC
+		# should this count as a projectile?
+		#0x60 : BOX_PROJ_ATTACK, # C,A,B,C
+		0x68 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Kyo") : {
 		0x40 : BOX_PROJ_VULN,   # 
@@ -179,7 +188,16 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Raiden") : {
-		#,
+		0x3F : BOX_PROJ_VULN,   # 
+		0x41 : BOX_PROJ_VULN,   # 
+		0x52 : BOX_THROW,       # C throw, D throw
+		0x56 : BOX_THROW,       # hcf+B or D
+		0x57 : BOX_THROW,       # hcf+BD
+		0x5D : BOX_THROW,       # hcb,hcb+A or C
+		0x5E : BOX_THROW,       # hcb,hcb+AC
+		0x53 : BOX_PROJ_ATTACK, # qcb+A
+		0x54 : BOX_PROJ_ATTACK, # qcb+C (on hit/block)
+		0x55 : BOX_PROJ_ATTACK, # qcb+AC
 	},
 	IDbyName("Ryo") : {
 		#,

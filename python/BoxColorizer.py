@@ -130,7 +130,11 @@ specialBoxIDs = {
 		0x7A : BOX_PROJ_ATTACK, # qcf,qcf+BD (neomax) (last hit)
 	},
 	IDbyName("Daimon") : {
-		#,
+		0x5A : BOX_THROW,       # hcb,f+A or C
+		0x5B : BOX_THROW,       # hcb,f+AC
+		0x61 : BOX_THROW,       # hcb,hcb+A or C
+		0x63 : BOX_THROW,       # hcb,hcb+AC
+		0x63 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Iori") : {
 		#,
@@ -139,7 +143,14 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Vice") : {
-		#,
+		0x56 : BOX_THROW,       # hcb,f+A or C
+		0x57 : BOX_THROW,       # hcb,f+AC
+		0x58 : BOX_THROW,       # hcb,hcb+B or D
+		0x59 : BOX_THROW,       # hcb,hcb+BD
+		0x5A : BOX_THROW,       # C throw, D throw
+		0x5C : BOX_THROW,       # dp+A or C
+		0x5E : BOX_THROW,       # dp+AC
+		0x5F : BOX_THROW,       # hcf,uf,u,d+A or C (midair)
 	},
 	IDbyName("Terry") : {
 		#,
@@ -181,7 +192,11 @@ specialBoxIDs = {
 		#,
 	},
 	IDbyName("Clark") : {
-		#,
+		0x52 : BOX_THROW,       # hcf+B or D
+		0x53 : BOX_THROW,       # hcf+BD
+		0x5D : BOX_THROW,       # hcb,hcb+A or C
+		0x5F : BOX_THROW,       # hcb,hcb+AC
+		0x61 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Leona") : {
 		#,

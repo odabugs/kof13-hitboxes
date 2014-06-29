@@ -24,7 +24,7 @@ def fixedColor(color):
 
 # for regular attacks, throws and projectile vulnerable/attack boxes
 def attackColorizer(charID, boxID):
-	boxType = specialBoxIDs[charID].get(boxID, BOX_ATTACK)
+	boxType = attackBoxIDs[charID].get(boxID, BOX_ATTACK)
 	return colorsByBoxType[boxType]
 
 
@@ -68,7 +68,7 @@ nameByID = lambda charID: charNamesByID.get(charID, None)
 # vulnerable, projectile attack, and throw hitboxes
 # IDs 0x3F through 0x43 seem to always be projectile vulnerable hitboxes?
 # BOX_PROJ_VULN IDs are used in so many places that it's not worth listing moves
-specialBoxIDs = {
+attackBoxIDs = {
 	# template (be sure to use IDbyName("Name") in place of -1)
 	-1 : {
 		0x00 : BOX_PROJ_VULN,   # 
@@ -163,7 +163,7 @@ specialBoxIDs = {
 		0x63 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Iori") : {
-		#0x1A : 				# This is the ID of the hurtbox on the startup of qcb+BD. Presumably it denotes projectile invincibility. Later on it becomes 0x11, which is the default.
+		#0x1A :                 # This is the ID of the hurtbox on the startup of qcb+BD. Presumably it denotes projectile invincibility. Later on it becomes 0x11, which is the default.
 		0x5D : BOX_THROW,       # hcf+A or C
 		0x5E : BOX_THROW,       # hcf+AC
 		0x6F : BOX_THROW,       # C throw, D throw
@@ -292,7 +292,7 @@ specialBoxIDs = {
 		0x85 : BOX_PROJ_ATTACK, # qcf+C
 		0x86 : BOX_PROJ_ATTACK, # qcf+AC
 		0x83 : BOX_PROJ_ATTACK, # qcf,hcb+AC
-		0x52 : BOX_THROW,		# C throw, D throw
+		0x52 : BOX_THROW,       # C throw, D throw
 
 	},
 	IDbyName("Robert") : {
@@ -306,8 +306,8 @@ specialBoxIDs = {
 		0x77 : BOX_PROJ_ATTACK, # qcf+AC
 		0x78 : BOX_PROJ_ATTACK, # Not found, presumably a projectile too though.
 		0x79 : BOX_PROJ_ATTACK, # f,hcf+P
-		0x5F : BOX_THROW,		# hcf+B or D or BD
-		0x52 : BOX_THROW,		# C throw, D throw
+		0x5F : BOX_THROW,       # hcf+B or D or BD
+		0x52 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Takuma") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -373,7 +373,7 @@ specialBoxIDs = {
 		0x55 : BOX_PROJ_ATTACK, # qcb+A
 		0x57 : BOX_PROJ_ATTACK, # qcb+C
 		0x59 : BOX_PROJ_ATTACK, # qcb+AC
-		0x65 : BOX_THROW,		# C throw, D throw
+		0x65 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("King") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -389,7 +389,7 @@ specialBoxIDs = {
 		0x57 : BOX_PROJ_ATTACK, # j.qcf+BD
 		0x61 : BOX_PROJ_ATTACK, # qcf,qcf+B or D
 		0x6B : BOX_PROJ_ATTACK, # qcb,qcb+BD
-		0x6C : BOX_THROW,		# C throw, D throw
+		0x6C : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Yuri") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -481,8 +481,8 @@ specialBoxIDs = {
 		0x6C : BOX_PROJ_ATTACK, # qcf,qcf+AC
 		0x6D : BOX_PROJ_ATTACK, # qcf,qcf+AC
 		0x71 : BOX_PROJ_ATTACK, # hcb,hcb+AC
-		0x5B : BOX_THROW,		# hcb+B or D
-		0x63 : BOX_THROW,		# C throw, D throw
+		0x5B : BOX_THROW,       # hcb+B or D
+		0x63 : BOX_THROW,       # C throw, D throw
 	},
 	# characters not associated with a team; hidden, DLC
 	IDbyName("EX Kyo") : {
@@ -523,8 +523,8 @@ specialBoxIDs = {
 		0x67 : BOX_PROJ_ATTACK, # qcf,hcb+AC
 		0x68 : BOX_PROJ_ATTACK, # qcf,hcb+AC (followup)
 		0x72 : BOX_PROJ_ATTACK, # qcf,qcf+AC
-		# BOX_PROJ_ATTACK, # Big full screen fireball at the end of  the neomax can't be 
-		0x6D : BOX_THROW,		# C throw, D throw (Billy's throwbox is WAY bigger than other characters')
+		# BOX_PROJ_ATTACK, # Big full screen fireball at the end of  the neomax can't be
+		0x6D : BOX_THROW,       # C throw, D throw (Billy's throwbox is WAY bigger than other characters')
 	},
 	IDbyName("Ash") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -545,7 +545,7 @@ specialBoxIDs = {
 		0x71 : BOX_PROJ_ATTACK, # qcb+AC or BD (2nd hit)
 		0x6B : BOX_PROJ_ATTACK, # A~B~C~D
 		0x6C : BOX_THROW,       # hcb,hcb+BD
-		0x72 : BOX_THROW,		# C throw, D throw
+		0x72 : BOX_THROW,       # C throw, D throw
 	},
 	IDbyName("Saiki") : {
 		0x3F : BOX_PROJ_VULN,   # 
@@ -558,9 +558,9 @@ specialBoxIDs = {
 		0x5E : BOX_PROJ_ATTACK, # qcf+AC
 		0x5F : BOX_PROJ_ATTACK, # qcf+AC (second part)
 		0x91 : BOX_PROJ_ATTACK, # qcf,qcf+A or C
-		0x86 : BOX_THROW,		# hcb,hcb+A or C
-		0x87 : BOX_THROW,		# hcb,hcb+AC
-		0x7C : BOX_THROW,		# C throw, D throw
+		0x86 : BOX_THROW,       # hcb,hcb+A or C
+		0x87 : BOX_THROW,       # hcb,hcb+AC
+		0x7C : BOX_THROW,       # C throw, D throw
 		#The qcb,hcb+AC Neomax is fullscreen, and the vulnerable fireball box overlaps the red fireball box. Don't know what the number is.
 	},
 }

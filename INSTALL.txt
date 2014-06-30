@@ -1,1 +1,204 @@
-TO BE WRITTEN IN FUTURE COMMIT
+King of Fighters XIII Steam Edition Hitbox Viewer
+Installation guide
+Source repository: https://github.com/odabugs/kof13-hitboxes
+Developer contact: pdk.odabugs@gmail.com
+This document was last edited on June 29, 2014
+
+----
+
+[TOC] TABLE OF CONTENTS
+
+[INTR] Introduction & Compatibility Notes
+[REQS] What You'll Need to Install
+[ISTL] Installation Step-by-Step
+[STRT] Getting Up and Running
+
+To navigate this document, search for the tag to the left of each section of
+the document with case sensitive search enabled.  For example, to jump to
+"Installation Step-by-Step", enable matching case and search for "[ISTL]".
+
+Viewing notes: This document is formatted to 78 character wide monospace.
+
+-----
+
+[INTR] Introduction & Compatibility Notes
+
+The current development version of the KOF XIII SE Hitbox Viewer is a Python-
+based application that attaches to a running instance of The King of Fighters
+XIII Steam Edition.  As such, system requirements for the hitbox viewer are
+the same as for the original game, which can be viewed at the game's Steam
+store page: http://store.steampowered.com/app/222940/.  There is currently one
+exception, however; this version of the hitbox viewer requires support for
+Windows Aero, available only on Windows Vista and later editions of Microsoft
+Windows.  Aero must also be enabled while running the game in order for the
+hitbox viewer to function.  To prevent the game from automatically disabling
+Aero on startup, pass the -a command line switch when starting kofxiii.exe.
+
+This hitbox viewer is currently tested and developed with 32-bit builds of
+Python 2.7 on Windows.  For reasons of third-party library compatibility,
+there are no current plans to extend support to Python 3 or 64-bit Python.
+All required components should work the same regardless of whether you're
+installing on a 32- or 64-bit version of Windows.  Despite requiring nothing
+that isn't available on Windows Vista and above, this tool has so far only
+been developed and tested on 64-bit Windows 7 Professional; please report if
+you experience compatibility issues with other combinations of hardware or
+software.  In terms of video card compatibility, any card supporting DirectX
+9.0c and also capable of running the original game should work; the current
+development machine uses an AMD Radeon 5670 with 512MB video RAM.  Again,
+please report any compatibility problems that you may experience with your
+own setup.
+
+-----
+
+[REQS] What You'll Need to Install
+
+The KOF XIII SE Hitbox Viewer requires the following software to be installed:
+- The King of Fighters XIII Steam Edition (requires Steam account and client)
+- Python 2.7 (32-bit)
+- setuptools 5.3
+- comtypes 1.1.0
+- pydbg, pgraph, pida (components of the PaiMei debugging framework)
+- DirectPython (included with KOF XIII SE Hitbox Viewer)
+
+The software listed above can be downloaded at the following locations:
+- KOF XIII SE: http://store.steampowered.com/app/222940/ (requires purchase)
+- Python 2.7 x86: https://www.python.org/ftp/python/2.7.7/python-2.7.7.msi
+- setuptools: https://pypi.python.org/pypi/setuptools/5.3
+- comtypes: https://pypi.python.org/pypi/comtypes/1.1.0
+- PaiMei: https://github.com/OpenRCE/paimei/archive/master.zip
+- DirectPython: http://sourceforge.net/projects/directpython/
+  (Note: DirectPython is already included; no need to download or install it)
+
+If you do not already have the KOF XIII SE Hitbox Viewer downloaded on your
+system, you may download it by either of the following means:
+Direct download: https://github.com/odabugs/kof13-hitboxes/archive/master.zip
+Using Git: git clone https://github.com/odabugs/kof13-hitboxes.git
+The Git-based option will allow you to stay up-to-date on the development of
+this program at any time with a simple "git pull" on the command line.  If you
+are not familiar with Git, you may opt to use the direct download instead, or
+you can find more information on Git at: http://git-scm.com/
+
+Users who are familiar and comfortable with installing third-party Python
+packages may wish to download the above packages and install them immediately.
+However, it is advised to follow the step-by-step below, since the steps to
+install some of the above packages to a state where the hitbox viewer can use
+them at this point are not necessarily completely obvious or "standard".
+In short, this installation process is still rather ad-hoc in order to get the
+hitbox viewer up and running, was initially found through trial and error
+early in the development of this program, and ultimately may leave an existing
+Python development environment in a slightly messy state if this is a concern.
+
+Note: pydbg, pgraph and pida are individual components of the broader PaiMei
+framework for debugging software on Windows using Python.  Out of these three
+components, pydbg is the only one strictly "used" by the KOF XIII SE Hitbox
+Viewer, but it is advised to install pgraph and pida anyway in order to avoid
+startup errors where the system complains that they aren't installed.  Other
+components of PaiMei should not be necessary to install to run this program.
+
+-----
+
+[ISTL] Installation Step-by-Step
+
+This installation guide assumes that all of the above software packages, as
+well as the KOF XIII SE Hitbox Viewer itself, have already been downloaded to
+a central folder, which we will refer to as C:\Downloads\.  Replace this with
+the actual location where you have saved these packages on your system.
+In the same vein, we will refer to your Python installation directory (the
+directory where your python.exe resides) as C:\Python27\.
+It is advised to install these software packages in the order presented.
+Naturally, you will need to have a copy of KOF XIII SE purchased via Steam and
+installed on your machine.
+NOTE: Administrator privileges may be required at some points in this install.
+
+
+1. Python
+Python 2.7 is provided as an MSI installer package for Windows at the link
+given in the REQS section of this document.  You can simply follow the steps
+that the installer walks you through, but take note of the directory where you
+choose to install Python; you'll need it for later steps in this guide, but
+as stated above, we'll refer to it here as C:\Python27\ for brevity's sake.
+
+For convenience in the following steps and when actually running the hitbox
+viewer, it is advised to add Python to your system's PATH environment variable
+if the installer does not do so automatically.  Follow these steps to do so:
+
+- Open the Control Panel and open System Properties.
+- Click on Advanced System Settings, then the Advanced tab.
+- Click on Environment Variables... at the bottom-right corner.
+- In the System Variables listing on the bottom half of the screen,
+  select PATH (may be rendered as "Path") and click Edit...
+- At the end of the line to be edited, type ";C:\Python27\" (without quotes).
+- Click OK at all steps to return to the Control Panel.
+- Open a command line at any location and type "python" to test your changes.
+  If you were successful, then Python will start up and print a startup line.
+
+
+2. setuptools
+setuptools is used as a means to make the process of installing comtypes in
+the next step simpler.  Download ez_setup.py, then double-click on it to "run"
+it.  This will automatically "bootstrap" a working setuptools installation.
+
+
+3. comtypes
+Extract comtypes-1.1.0.zip to C:\Downloads\.  Open a command line at
+C:\Downloads\comtypes-1.1.0\, and type "python setup.py install".
+
+If you do not know how to navigate in a command line, follow these steps:
+
+- Click "Run" on the Start Menu (or press Windows Key+R).
+- Type "cmd", then press Enter.
+- Type "cd C:\Downloads\comtypes-1.1.0\", then press Enter.
+  (Note: If your actual download folder has a space anywhere in the pathname,
+   then put double quote marks around the full path that you type in).
+- Type "python setup.py install".  You can close the command line when it
+  allows you to type on the prompt again, if installation was successful.
+
+
+4. pydbg, pgraph, pida
+Download master.zip from the download page at the link given in the REQS
+section of this document; this file will be saved as paimei-master.zip.
+Extract it to C:\Downloads\, then navigate to C:\Downloads\paimei-master\.
+From this location, select the "pgraph", "pida", "pydbg" and "utils" folders,
+then "copy" all of them (Ctrl+C).  Navigate to C:\Python27\Lib\site-packages\,
+then "paste" the four folders that you copied from paimei-master (Ctrl+V).
+
+
+5. DirectPython
+There's nothing to be done here; a copy of DirectPython is provided in the
+\python\directx folder of the KOF XIII SE Hitbox Viewer source download,
+which the program should be able to detect and start using on its own.
+
+-----
+
+[STRT] Getting Up and Running
+
+After installing all of the above software packages, you may set up and run
+the KOF XIII SE Hitbox Viewer.  If you downloaded it via the Git-based
+approach, simply navigate to the directory where you performed the "git
+clone".  If you downloaded the zip file, extract it to any location, then
+open the "kof13-hitboxes-master" folder that it creates upon extraction.
+
+Start the game with Aero enabled before starting the hitbox viewer.  In order
+to prevent the game from automatically turning Aero off, pass the -a command
+line switch to it on startup.  This can be done on Steam with these steps:
+
+- Open the Steam client and log into your Steam account if necessary.
+- Go to Library, then Installed.
+- Right-click on King of Fighters XIII in your installed games list.
+- Select Properties, then go to the General tab.
+- Click Set Launch Options...
+- Type "-a" (without quotes) in the Launch Options dialog box.
+- Press OK at all steps to return to the Steam client.
+
+Once the game is up and running, start a match in any game mode and double-
+click on start.bat in the folder where you installed the hitbox viewer.
+It is advised to start the hitbox viewer either during gameplay or shortly
+beforehand (e.g., during stage select or character select), since it can
+"hang" if left on menu screens for a long enough time.  For this reason,
+users may also experience crashes inbetween matches; "your mileage may vary"
+regarding stability of the hitbox viewer in its current state, though it
+should be stable enough to play a 3v3 match from start to finish.
+NOTE: We haven't tried taking it online yet, and though it probably won't
+result in a ban, we don't advise it, since this tool works by setting a
+software breakpoint on the game's running process, thus modifying the game's
+memory in order to attach itself (though only in the code segment of memory).

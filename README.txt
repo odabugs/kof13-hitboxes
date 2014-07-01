@@ -4,6 +4,11 @@ Source repository: https://github.com/odabugs/kof13-hitboxes
 Developer contact: pdk.odabugs@gmail.com
 This document was last edited on June 29, 2014
 
+THIS vIEWER IS STILL IN VERY EARLY DEVELOPMENT.
+Many thing may still be broken, and there may still be mistakes. We're hard
+at work to make the viewer more user-friendly, but working correctly is our
+highest priority.
+
 This readme document is currently "to be written" in a future commit to this
 project.  For now, please refer instead to INSTALL.txt for installation and
 startup instructions.

@@ -2,7 +2,7 @@ King of Fighters XIII Steam Edition Hitbox Viewer
 Installation guide
 Source repository: https://github.com/odabugs/kof13-hitboxes
 Developer contact: pdk.odabugs@gmail.com
-This document was last edited on June 29, 2014
+This document was last edited on July 1, 2014
 
 ----
 
@@ -53,21 +53,10 @@ own setup.
 [REQS] What You'll Need to Install
 
 The KOF XIII SE Hitbox Viewer requires the following software to be installed:
-- The King of Fighters XIII Steam Edition (requires Steam account and client)
-- Python 2.7 (32-bit)
-- setuptools 5.3
-- comtypes 1.1.0
-- pydbg, pgraph, pida (components of the PaiMei debugging framework)
-- DirectPython (included with KOF XIII SE Hitbox Viewer)
-
-The software listed above can be downloaded at the following locations:
-- KOF XIII SE: http://store.steampowered.com/app/222940/ (requires purchase)
 - Python 2.7 x86: https://www.python.org/ftp/python/2.7.7/python-2.7.7.msi
 - setuptools: https://pypi.python.org/pypi/setuptools/5.3
 - comtypes: https://pypi.python.org/pypi/comtypes/1.1.0
-- PaiMei: https://github.com/OpenRCE/paimei/archive/master.zip
-- DirectPython: http://sourceforge.net/projects/directpython/
-  (Note: DirectPython is already included; no need to download or install it)
+- pydbg: https://github.com/OpenRCE/paimei/archive/master.zip
 
 If you do not already have the KOF XIII SE Hitbox Viewer downloaded on your
 system, you may download it by either of the following means:
@@ -77,23 +66,6 @@ The Git-based option will allow you to stay up-to-date on the development of
 this program at any time with a simple "git pull" on the command line.  If you
 are not familiar with Git, you may opt to use the direct download instead, or
 you can find more information on Git at: http://git-scm.com/
-
-Users who are familiar and comfortable with installing third-party Python
-packages may wish to download the above packages and install them immediately.
-However, it is advised to follow the step-by-step below, since the steps to
-install some of the above packages to a state where the hitbox viewer can use
-them at this point are not necessarily completely obvious or "standard".
-In short, this installation process is still rather ad-hoc in order to get the
-hitbox viewer up and running, was initially found through trial and error
-early in the development of this program, and ultimately may leave an existing
-Python development environment in a slightly messy state if this is a concern.
-
-Note: pydbg, pgraph and pida are individual components of the broader PaiMei
-framework for debugging software on Windows using Python.  Out of these three
-components, pydbg is the only one strictly "used" by the KOF XIII SE Hitbox
-Viewer, but it is advised to install pgraph and pida anyway in order to avoid
-startup errors where the system complains that they aren't installed.  Other
-components of PaiMei should not be necessary to install to run this program.
 
 -----
 
@@ -114,14 +86,13 @@ NOTE: Administrator privileges may be required at some points in this install.
 1. Python
 Python 2.7 is provided as an MSI installer package for Windows at the link
 given in the REQS section of this document.  You can simply follow the steps
-that the installer walks you through, but take note of the directory where you
-choose to install Python; you'll need it for later steps in this guide, but
-as stated above, we'll refer to it here as C:\Python27\ for brevity's sake.
+that the installer walks you through, but ensure that you add Python to your
+system's PATH environment variable.  During installation, this can be done on
+the "Custome Python" screen: simply enable the option that says "Add
+python.exe to Path".
 
-For convenience in the following steps and when actually running the hitbox
-viewer, it is advised to add Python to your system's PATH environment variable
-if the installer does not do so automatically.  Follow these steps to do so:
-
+If you did NOT add Python to your system's PATH during installation, you can
+follow these steps to add it to your PATH after installation:
 - Open the Control Panel and open System Properties.
 - Click on Advanced System Settings, then the Advanced tab.
 - Click on Environment Variables... at the bottom-right corner.
@@ -129,7 +100,7 @@ if the installer does not do so automatically.  Follow these steps to do so:
   select PATH (may be rendered as "Path") and click Edit...
 - At the end of the line to be edited, type ";C:\Python27\" (without quotes).
 - Click OK at all steps to return to the Control Panel.
-- Open a command line at any location and type "python" to test your changes.
+- Select Run... from the Start Menu and type "python" to test your changes.
   If you were successful, then Python will start up and print a startup line.
 
 
@@ -154,21 +125,17 @@ If you do not know how to navigate in a command line, follow these steps:
   allows you to type on the prompt again, if installation was successful.
 
 
-4. pydbg, pgraph, pida
-Download master.zip from the download page at the link given in the REQS
-section of this document; this file will be saved as paimei-master.zip.
-Extract it to C:\Downloads\, then navigate to C:\Downloads\paimei-master\.
-From this location, select the "pgraph", "pida", "pydbg" and "utils" folders,
-then "copy" all of them (Ctrl+C).  Navigate to C:\Python27\Lib\site-packages\,
-then "paste" the four folders that you copied from paimei-master (Ctrl+V).
+4. pydbg
+Download "pydbg-1.2.win32-py2.7.exe" from the link given for pydbg in the
+REQS section of this document.  Run the installer and follow its steps.
+If you have multiple versions of Python installed on your system concurrently,
+make sure that you choose the instance of Python that you just installed in
+step 1 (in C:\Python27\) when the pydbg installer asks which Python version
+it should install itself on top of.
 
-
-5. DirectPython
-There's nothing to be done here; a copy of DirectPython is provided in the
-\python\directx folder of the KOF XIII SE Hitbox Viewer source download,
-which the program should be able to detect and start using on its own.
 
 -----
+
 
 [STRT] Getting Up and Running
 

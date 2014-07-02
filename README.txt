@@ -12,3 +12,7 @@ highest priority.
 This readme document is currently "to be written" in a future commit to this
 project.  For now, please refer instead to INSTALL.txt for installation and
 startup instructions.
+
+Special thanks to Phoenix for testing, feature suggestions, compiling data
+essential for proper discerning of hitbox types, and for fielding user
+support.

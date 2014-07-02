@@ -60,8 +60,10 @@ The KOF XIII SE Hitbox Viewer requires the following software to be installed:
 
 If you do not already have the KOF XIII SE Hitbox Viewer downloaded on your
 system, you may download it by either of the following means:
+
 Direct download: https://github.com/odabugs/kof13-hitboxes/archive/master.zip
 Using Git: git clone https://github.com/odabugs/kof13-hitboxes.git
+
 The Git-based option will allow you to stay up-to-date on the development of
 this program at any time with a simple "git pull" on the command line.  If you
 are not familiar with Git, you may opt to use the direct download instead, or
@@ -165,7 +167,13 @@ beforehand (e.g., during stage select or character select), since it can
 users may also experience crashes inbetween matches; "your mileage may vary"
 regarding stability of the hitbox viewer in its current state, though it
 should be stable enough to play a 3v3 match from start to finish.
-NOTE: We haven't tried taking it online yet, and though it probably won't
-result in a ban, we don't advise it, since this tool works by setting a
-software breakpoint on the game's running process, thus modifying the game's
-memory in order to attach itself (though only in the code segment of memory).
+
+NOTE: We haven't tried taking this tool online yet, and though it probably won't
+result in a ban, we don't advise it (at least for now).  Since this tool works
+by setting a software breakpoint on the game's running process, this modifies
+the game's memory while it's running, which can be detected by certain anti-
+cheat mechanisms.  We currently have no idea how the game's anti-cheat works,
+and we don't intend for this to be a tool to aid cheating in online games.
+We especially do not intend for this tool to aid users trying to pirate a copy
+of KOF XIII; we make no attempt to circumvent the game's built-in copy
+protection, and we have no plans to do so.

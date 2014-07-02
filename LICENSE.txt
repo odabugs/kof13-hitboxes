@@ -1,4 +1,4 @@
-KoF XIII Hitbox Viewer Copyright (C) 2014 E.V. Fuller (pdk.odabugs@gmail.com)
+KoF XIII Hitbox Viewer Copyright (C) 2014 E. Fuller (pdk.odabugs@gmail.com)
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
@@ -24,12 +24,17 @@ All rights reserved by their respective copyright holders.
 
 This software, and all components or derivatives thereof, are not officially
 endorsed, supported, or sponsored by SNK Playmore Corporation nor by Valve
-Corporation, unless otherwise stated.  All use of this software, or any
-component or derivative thereof, is at the user's own risk, including the
-risk that the user's account may be banned from the Steam service due to
-the use of this software.
+Corporation.  Any use of this software is at the user's own risk, including the
+risk that the user's account may be banned from the Steam service or from
+online play due to the use of this software.
 
-DirectPython (C) 2007-2013 Heikki Salo (directpython.sourceforge.net)
-DirectPython is a project by Heikki Salo, located at the URL given above.
-This software is unrelated, and is not endorsed or supported by Heikki Salo
-unless otherwise stated.
+DirectPython (C) 2007-2013 Heikki Salo (http://directpython.sourceforge.net/)
+pydbg, PaiMei (C) Pedram Amini (http://pedram.openrce.org/PaiMei/docs/)
+comtypes (C) Thomas Heller (http://starship.python.net/crew/theller/comtypes)
+setuptools (C) Jason R. Coombs et al.
+(https://pypi.python.org/pypi/setuptools#credits)
+These software packages are copyright their respective owners, and are subject
+to the license agreements laid out by them.  This software, and all components
+or derivatives thereof, are not officially endorsed, supported, or sponsored by
+any of the above individuals nor by any contributors to their respective
+software projects.

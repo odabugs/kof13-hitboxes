@@ -4,7 +4,6 @@ import traceback
 
 from pydbg import pydbg
 from pydbg.defines import *
-import utils
 
 from Global import *
 from Renderer import Renderer

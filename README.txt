@@ -2,7 +2,7 @@ King of Fighters XIII Steam Edition Hitbox Viewer
 Readme
 Source repository: https://github.com/odabugs/kof13-hitboxes
 Developer contact: pdk.odabugs@gmail.com
-This document was last edited on June 29, 2014
+This document was last edited on July 2, 2014
 
 THIS VIEWER IS STILL IN VERY EARLY DEVELOPMENT.
 Many thing may still be broken, and there may still be mistakes. We're hard

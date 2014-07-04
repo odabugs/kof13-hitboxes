@@ -56,7 +56,7 @@ The KOF XIII SE Hitbox Viewer requires the following software to be installed:
 - Python 2.7 x86: https://www.python.org/ftp/python/2.7.7/python-2.7.7.msi
 - setuptools: https://pypi.python.org/pypi/setuptools/5.3
 - comtypes: https://pypi.python.org/pypi/comtypes/1.1.0
-- pydbg: https://github.com/OpenRCE/paimei/archive/master.zip
+- pydbg: http://www.lfd.uci.edu/~gohlke/pythonlibs/
 
 If you do not already have the KOF XIII SE Hitbox Viewer downloaded on your
 system, you may download it by either of the following means:

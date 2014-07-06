@@ -1,10 +1,8 @@
 from Global import reverseDict
-#from Colors import *
-#from CStructures import HITBOX1, HITBOX2
 
 # hitbox types
-BOX_COLLISION = 0
-BOX_VULNERABLE = 1
+BOX_VULNERABLE = 0
+BOX_COLLISION = 1
 BOX_ATTACK = 2
 BOX_THROW = 3
 # vulnerable and attack hitboxes on projectiles
@@ -15,17 +13,31 @@ BOX_GUARD = 6
 # for moves with proximity detection (e.g., Kyo hcb+K)
 BOX_PROXIMITY = 7
 
+hitboxTypes = (
+	BOX_VULNERABLE,
+	BOX_COLLISION,
+	BOX_ATTACK,
+	BOX_THROW,
+	BOX_PROJ_VULN,
+	BOX_PROJ_ATTACK,
+	BOX_GUARD,
+	BOX_PROXIMITY
+)
 
-# return colorizer function that always returns the same color,
+
+# return box typing function that always returns the same type,
 # regardless of arguments passed (for "knowns" such as pushboxes)
-def fixedColor(color):
-	return (lambda character, boxID: color)
+def alwaysBoxType(boxType):
+	return (lambda characterID, boxID: boxType)
 
 
-# for regular attacks, throws and projectile vulnerable/attack boxes
-def attackColorizer(charID, boxID):
-	boxType = attackBoxIDs[charID].get(boxID, BOX_ATTACK)
-	return colorsByBoxType[boxType]
+collisionBoxFn  = alwaysBoxType(BOX_COLLISION) # pushboxes
+vulnerableBoxFn = alwaysBoxType(BOX_VULNERABLE) # hittable boxes
+armorBoxFn      = alwaysBoxType(BOX_GUARD) # for blocking and moves with armor
+proximityBoxFn  = alwaysBoxType(BOX_PROXIMITY) # for e.g., Kyo hcb+K
+# covers box types BOX_ATTACK, BOX_THROW, BOX_PROJ_VULN, and BOX_PROJ_ATTACK
+def attackBoxFn(characterID, boxID):
+	return attackBoxIDs[characterID].get(boxID, BOX_ATTACK)
 
 
 # this is temporary and will be replaced when config file
@@ -60,8 +72,8 @@ charNamesByID = {
 lowercase = lambda string: string.lower()
 charIDsByName = reverseDict(charNamesByID, valFn=lowercase)
 allCharIDs = charNamesByID.keys()
-IDbyName = lambda charName: charIDsByName.get(charName.lower(), None)
-nameByID = lambda charID: charNamesByID.get(charID, None)
+IDbyName = lambda charName: charIDsByName.get(charName.lower(), -1)
+nameByID = lambda charID: charNamesByID.get(charID, "Unknown")
 
 
 # list per character of box IDs corresponding to projectile

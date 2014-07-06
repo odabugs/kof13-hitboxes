@@ -4,8 +4,11 @@ from os import getcwdu
 import os.path
 import re
 
-from Colors import colorByName, colorAsHex, colorAsRGB, printAsRGB
 from Global import *
+from Colors import colorByName, colorAsHex, colorAsRGB, printAsRGB
+from BoxTypes import BOX_COLLISION, BOX_VULNERABLE, BOX_ATTACK, BOX_THROW
+from BoxTypes import BOX_PROJ_VULN, BOX_PROJ_ATTACK, BOX_GUARD, BOX_PROXIMITY
+from BoxTypes import hitboxTypes
 
 
 # supported config options and their defaults are at the bottom of this file
@@ -44,7 +47,7 @@ class Config:
 		return result
 
 
-	def getPlayer(self, option, player):
+	def getForPlayer(self, player, option):
 		originalOption = option.strip(WHITESPACE)
 		option = originalOption.lower()
 
@@ -73,12 +76,12 @@ class Config:
 		if player is None:
 			return self.getGlobal(option)
 		elif player in (1, 2):
-			return self.getPlayer(option, player)
+			return self.getForPlayer(player, option)
 		else:
 			raise ValueError("player must be 1, 2 or None (global)")
 	
 	
-	# for REPL class testing only
+	# for REPL class testing
 	def printout(self):
 		def printWithSelectKeys(m, keysToPrint):
 			result = "{"
@@ -281,11 +284,12 @@ rawPlayerDefaults = {
 	"collision_box_color" : (parseColor, "cyan"),
 	"vulnerable_box_color" : (parseColor, "blue"),
 	"attack_box_color" : (parseColor, "red"),
-	"guard_box_color" : (parseColor, "green"),
 	"throw_box_color" : (parseColor, "magenta"),
 	"throwable_box_color" : (parseColor, "white"),
 	"projectile_vulnerable_box_color" : (parseColor, "yellow"),
 	"projectile_attack_box_color" : (parseColor, "orange"),
+	"guard_box_color" : (parseColor, "green"),
+	"proximity_box_color" : (parseColor, "silver"),
 }
 playerDefaults = processMap(rawPlayerDefaults)
 playerOptions = tuple(playerDefaults.keys())
@@ -293,12 +297,13 @@ playerOptions = tuple(playerDefaults.keys())
 # ordered from lowest to highest drawing priority; higher overlaps lower,
 # pivot is implicit and always has the highest priority (i.e., is drawn last)
 defaultDrawOrder = (
-	"collision",
 	"vulnerable", # hurtbox
+	"collision",
 	"throwable",
 	"attack", # hitbox
 	"guard", # for blocking and for moves with armor points
 	"throw",
+	"proximity", # e.g., Kyo hcb+K
 	"proj_vulnerable", # projectile hurtbox
 	"proj_attack", # projectile hitbox
 )
@@ -317,8 +322,11 @@ globalOnlyDefaults = {
 }
 
 # "enabled" is only intended to turn off rendering on a per-player basis
+playerOnlyOptions = (
+	"enabled",
+)
 rawGlobalDefaults = merge(
-	dictWithout(rawPlayerDefaults, ["enabled"]),
+	dictWithout(rawPlayerDefaults, playerOnlyOptions),
 	globalOnlyDefaults)
 globalDefaults = processMap(rawGlobalDefaults)
 globalOptions = tuple(globalDefaults.keys())

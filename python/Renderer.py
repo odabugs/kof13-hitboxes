@@ -8,7 +8,8 @@ from directx.d3dx import *
 from Global import *
 from CStructures import *
 from Colors import rgb, changeAlpha, colorByName
-from BoxColorizer import fixedColor, attackColorizer, nameByID
+import BoxTypes
+
 
 user32 = windll.user32
 kernel32 = windll.kernel32
@@ -40,15 +41,6 @@ def wndProc(hwnd, message, wParam, lParam):
 		user32.PostQuitMessage(0)
 		return 0
 
-	"""
-	# experiment with capturing mouse clicks on the overlay window
-	# (this only seems to work if WS_EX_LAYERED is turned off)
-	WM_LBUTTONDOWN = 0x0201
-	if message == WM_LBUTTONDOWN:
-		MASK = 0xFFFF
-		x, y = lParam & MASK, (lParam & (MASK << 16)) >> 16
-		print "OH YES (%d, %d)" % (x, y)
-	#"""
 	return user32.DefWindowProcA(c_int(hwnd), c_int(message),
 		c_int(wParam), c_int(lParam))
 
@@ -56,10 +48,12 @@ def wndProc(hwnd, message, wParam, lParam):
 class Renderer:
 	def __init__(self, environment, tickerInterval=2):
 		self.env = environment
-		self.viewer = self.env.viewer
-		self.camera = self.viewer.camera
-		self.p1 = self.viewer.p1
-		self.p2 = self.viewer.p2
+		self.config = self.env.config
+		self.process = self.env.process
+		self.gameState = self.env.gameState
+		self.camera = self.gameState.camera
+		self.p1 = self.gameState.p1
+		self.p2 = self.gameState.p2
 		self.windowsMessage = MSG()
 
 		self.annotations = argvContains("-annotate")
@@ -86,8 +80,8 @@ class Renderer:
 		self.spareFillbuf = (CUSTOMVERTEX * 4)()
 
 		# reusable resources for drawing primitives
-		self.boxvec = (D3DXVECTOR2 * 5)() #((0,0), (0,0), (0,0), (0,0), (0,0))
-		self.linevec = (D3DXVECTOR2 * 2)() #((0,0), (0,0))
+		self.boxvec = (D3DXVECTOR2 * 5)()
+		self.linevec = (D3DXVECTOR2 * 2)()
 		
 		self.left = 0
 		self.top = 0
@@ -107,50 +101,28 @@ class Renderer:
 		self.frameCounter = 1
 		self.frameCounterLimit = 60
 
-		# buffer structures for reading hitbox data from memory
-		boxbuf1, boxbuf2 = HITBOX1(), HITBOX2()
-		# structure of p1addresses/p2addresses:
-		# (player, pointer, colorizer, buffer object, pointer read offset)
-		p1addresses = (
-			# vulnerable boxes
-			(1, 0x007EAC2C, fixedColor(0x0000FF), boxbuf1, 0),
-			# collision box
-			(1, 0x007EAC08, fixedColor(0x00FFFF), boxbuf2, 8),
-			# attack boxes, projectile boxes, normal throws
-			(1, 0x007EAC14, attackColorizer, boxbuf1, 0),
-			#(1, 0x007EAC14, fixedColor(0xFF0000), boxbuf1, 0),
-			# armor and guard/block
-			(1, 0x007EAC20, fixedColor(0x00FF00), boxbuf1, 0),
-			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
-			(1, 0x007EAC38, fixedColor(0xC0C0C0), boxbuf2, 8),
-			#(1, 0x007EAC38, fixedColor(0xFFFF00), boxbuf2, 8),
-		)
-		p2addresses = (
-			# vulnerable boxes
-			(2, 0x007EAC68, fixedColor(0x4040FF), boxbuf1, 0),
-			# collision box
-			(2, 0x007EAC44, fixedColor(0x40FFFF), boxbuf2, 8),
-			# attack boxes, projectile boxes, normal throws
-			(2, 0x007EAC50, attackColorizer, boxbuf1, 0),
-			#(2, 0x007EAC50, fixedColor(0xFF4040), boxbuf1, 0),
-			# armor and guard/block
-			(2, 0x007EAC5C, fixedColor(0x40FF40), boxbuf1, 0),
-			# proximity detection box (e.g., on Kyo hcb+K or running grabs)
-			(2, 0x007EAC74, fixedColor(0xC0C0C0), boxbuf2, 8),
-			#(2, 0x007EAC74, fixedColor(0xFFFF40), boxbuf2, 8),
-		)
-
-		# TODO: support configurable draw order based on box type
-		self.drawAddresses = interleave(p1addresses, p2addresses)
-
-		#UNKNOWN = [ # what do these do??
-			#(0x007EABF0, 0x064000), # black - broken
-			#(0x007EAC8C, 0xFF00FF), # magenta - ???
-			#(0x007EACC8, 0x800080), # purple - ???
-			#(0x007EACD4, 0xFF00FF), # magenta - ???
-			#(0x007EAC98, 0x808000), # brown - broken
-		#]
+		self.boxColors = {1: {}, 2 : {}}
+		self.fillBoxColors()
 	
+	
+	def fillBoxColors(self):
+		def boxColorsForPlayer(playerID):
+			colorsByType = (
+				(BoxTypes.BOX_VULNERABLE,  "vulnerable_box_color"),
+				(BoxTypes.BOX_COLLISION,   "collision_box_color"),
+				(BoxTypes.BOX_ATTACK,      "attack_box_color"),
+				(BoxTypes.BOX_THROW,       "throw_box_color"),
+				(BoxTypes.BOX_PROJ_VULN,   "projectile_vulnerable_box_color"),
+				(BoxTypes.BOX_PROJ_ATTACK, "projectile_attack_box_color"),
+				(BoxTypes.BOX_GUARD,       "guard_box_color"),
+				(BoxTypes.BOX_PROXIMITY,   "proximity_box_color"),
+			)
+			lookupColor = lambda option: self.config.get(option, playerID)
+			return dict([(p[0], lookupColor(p[1])) for p in colorsByType])
+
+		self.boxColors[1] = boxColorsForPlayer(1)
+		self.boxColors[2] = boxColorsForPlayer(2)
+
 
 	def release(self):
 		print "Releasing Renderer"
@@ -169,11 +141,11 @@ class Renderer:
 
 	
 	def setDimensions(self):
-		self.viewer.setKOFRects()
-		origin = self.viewer.kof_origin
-		#resolution = self.viewer.kof_resolution
-		br = self.viewer.kof_bounding_rect
-		cr = self.viewer.kof_client_rect
+		self.process.setKOFRects()
+		origin = self.process.kof_origin
+		#resolution = self.process.kof_resolution
+		br = self.process.kof_bounding_rect
+		cr = self.process.kof_client_rect
 
 		self.width = cr.right
 		self.height = cr.bottom
@@ -188,9 +160,9 @@ class Renderer:
 
 	def hasWindowMoved(self):
 		# capture new game window position and size onscreen
-		self.viewer.setKOFRects() # mutates self.viewer.kof_bounding_rect
-		br = self.viewer.kof_bounding_rect
-		origin = self.viewer.kof_origin
+		self.process.setKOFRects() # mutates self.process.kof_bounding_rect
+		br = self.process.kof_bounding_rect
+		origin = self.process.kof_origin
 		newLeft, newTop = origin.x, origin.y
 		newRight, newBottom = br.right, br.bottom
 
@@ -229,31 +201,31 @@ class Renderer:
 
 		if not user32.RegisterClassA(byref(wndClass)):
 			raise Exception("user32.RegisterClassA: %s" %
-				self.viewer.getLastError())
+				self.process.getLastError())
 		
 		self.hwnd = user32.CreateWindowExA(
 			WS_EX_TOPMOST | WS_EX_COMPOSITED |
-			WS_EX_TRANSPARENT | WS_EX_LAYERED,
-			APP_NAME,
-			APP_NAME,
-			WS_POPUP,
-			self.viewer.kof_origin.x, # left X of game window
-			self.viewer.kof_origin.y, # top Y of game window
-			self.viewer.kof_resolution.x, # game window X width
-			self.viewer.kof_resolution.y, # game window Y height
-			None,
-			None,
-			hInstance,
-			None)
+			WS_EX_TRANSPARENT | WS_EX_LAYERED, # extended window style
+			APP_NAME, # class name for RegisterClassEx
+			APP_NAME, # window title
+			WS_POPUP, # base window style
+			self.process.kof_origin.x, # left X of game window
+			self.process.kof_origin.y, # top Y of game window
+			self.process.kof_resolution.x, # game window X width
+			self.process.kof_resolution.y, # game window Y height
+			None, # parent hwnd (none)
+			None, # window menu
+			hInstance, # instance handle
+			None) # "extra" argument
 
 		if not self.hwnd:
 			raise Exception("user32.CreateWindowExA: %s" %
-				self.viewer.getLastError())
+				self.process.getLastError())
 		
 		if oledll.Dwmapi.DwmExtendFrameIntoClientArea(self.hwnd,
 		byref(MARGINS(-1, -1, -1, -1))) != S_OK:
 			raise Exception("DwmExtendFrameIntoClientArea: %s" %
-			self.viewer.getLastError())
+			self.process.getLastError())
 
 		# aero must be enabled for the overlay to work
 		aeroEnabled = c_int()
@@ -293,7 +265,7 @@ class Renderer:
 			self.spareFillbuf[i].x     = 0.0
 			self.spareFillbuf[i].y     = 0.0
 			self.spareFillbuf[i].z     = 1.0 # we don't need this
-			self.spareFillbuf[i].rhw   = 1.0
+			self.spareFillbuf[i].rhw   = 1.0 # don't perform transformations
 			self.spareFillbuf[i].color = 0 # clear
 		
 		memmove(ppVertexBuf2.contents, byref(self.spareFillbuf), vertexBufSize)
@@ -327,7 +299,7 @@ class Renderer:
 		address = d3d.Direct3DCreate9(UINT(D3D_SDK_VERSION))
 
 		if not address:
-			raise Exception("Direct3DCreate9: %s" % self.viewer.getLastError())
+			raise Exception("Direct3DCreate9: %s" % self.process.getLastError())
 		
 		params.Windowed = True
 		params.SwapEffect = D3DSWAPEFFECT.DISCARD
@@ -513,10 +485,9 @@ class Renderer:
 		# 854x480 ingame resolution displays player sprites at about 1:1 scale
 		return (float(self.height) / baseline)
 
-	
+
 	# TODO:
 	# - ensure that shaking is handled correctly
-	# - fix handling of vertical screen scrolling (e.g., Billy dp+K on hit)
 	def relativeCoords(self, sourceX, sourceY):
 		cam = self.camera
 		shakeX = round(cam.XShake * self.scale)
@@ -526,16 +497,20 @@ class Renderer:
 		destY = self.baseY   - round(sourceY * self.scale) - shakeY
 		return (int(destX), int(destY))
 
-	
+
 	def drawPlayerPivots(self):
-		pivotCoords = lambda p: self.relativeCoords(p.XPivot, p.YPivot)
+		def pivotCoords(player):
+			ps = player.playerStruct
+			return self.relativeCoords(ps.XPivot, ps.YPivot)
+
 		p1pivot = pivotCoords(self.p1)
 		p2pivot = pivotCoords(self.p2)
 		playerPivots = (p1pivot, p2pivot)
 		for pivot in playerPivots:
 			self.drawPivot(pivot[0], pivot[1])
-	
 
+
+	"""
 	def annotateBox(self, left, bottom, right, top, ID, offset, color):
 		relLeft,  relBottom = self.relativeCoords(left,  bottom)
 		relRight, relTop    = self.relativeCoords(right, top   )
@@ -550,68 +525,37 @@ class Renderer:
 		yPosition = relBottom + offset # annotation below box
 		#yPosition = relTop - offset # annotation above box
 		self.drawText(xPosition, yPosition, 500, 500, textColor, result)
+	"""
 
 
-	def drawSingleHitbox(self, character, hitbox, colorizer, offset):
-		left,  bottom = hitbox.Left,  hitbox.Bottom
-		width, height = hitbox.Width, hitbox.Height
-		right, top = left + width, bottom + height
-		if (width <= 0.0 or height <= 0.0 or
-			isnan(left)  or isnan(bottom) or
-			isnan(width) or isnan(height)):
-			return False # box could not be drawn
-		
-		ID = hitbox.BoxID
-		color = colorizer(character, ID)
-		self.drawBoxRelative(left, bottom, width, height, color)
-		if self.annotations:
-			self.annotateBox(left, bottom, right, top, ID, offset, color)
-		return True # box was drawn
+	def drawPlayerHitboxes(self):
+		def drawHitboxList(boxList, color):
+			for box in boxList:
+				left, bottom, width, height = box
+				self.drawBoxRelative(left, bottom, width, height, color)
 
-	
-	def drawHitboxList(self, character, origin, colorizer, boxbuf, readOffset):
-		currentBox = boxbuf
-		readToBuffer = self.viewer._RPM
-		readPointer = self.viewer.readUnsignedDword
-		drawBox = lambda textOffset: self.drawSingleHitbox(
-			character, currentBox, colorizer, textOffset)
-		# the following two lambdas are side effecting on currentBox
-		readNextBoxFrom = lambda address: readToBuffer(address, currentBox)
-		readNextBox = lambda: readNextBoxFrom(currentBox.Next1 + readOffset)
-		
-		# start reading linked list of hitboxes, draw first box
-		base = readPointer(readPointer(origin)) + readOffset
-		readNextBoxFrom(base) # boxes start at (*(*origin))+readOffset
-		drawBox(5)
+		def drawHitboxesForPlayer(player):
+			playerID = player.ID
+			for boxType in BoxTypes.hitboxTypes:
+				boxListColor = self.boxColors[playerID][boxType]
+				boxList = player.hitboxes[boxType]
+				drawHitboxList(boxList, boxListColor)
 
-		# read list of successive boxes; stop when we loop back to the first
-		passes, limit = 0, readPointer(origin + 4)
-		offset = 10 # text displacement so annotations won't overlap as badly
-		while passes < limit: # while currentBox.Next1 != base:
-			if not (readNextBox() and drawBox(offset)):
-				break
-			passes += 1
-			offset += 8
-	
+		drawHitboxesForPlayer(self.p1)
+		drawHitboxesForPlayer(self.p2)
+
+
 
 	def renderFrame(self):
-		self.viewer.update() # grab latest game state
+		self.gameState.update() # updates p1, p2, camera implicitly
 		# has the game window been moved/resized?
 		if self.updateWindowTicker == 0:
 			self.updateWindowPosition()
 			self.updateWindowTicker = self.updateWindowTickerInterval
-		self.beginScene() # start rendering
+		self.beginScene()
 		
 		# draw some hitboxes oh boy!!!!
-		for boxDrawingInfo in self.drawAddresses:
-			player, address, colorizer, boxbuf, offset = boxDrawingInfo
-			if player == 1:
-				character = self.viewer.p1_current
-			elif player == 2:
-				character = self.viewer.p2_current
-			self.drawHitboxList(character, address, colorizer, boxbuf, offset)
-
-		# draw player pivot axes
+		self.drawPlayerHitboxes()
 		if self.drawPivots:
 			self.drawPlayerPivots()
 
@@ -621,19 +565,6 @@ class Renderer:
 			self.updateWindowTicker -= 1
 		if self.syncedMode:
 			self.pumpMessages()
-
-		#print "p1 current char is " + nameByID(self.viewer.p1_current)
-		#print "p2 current char is " + nameByID(self.viewer.p2_current)
-		#print "p1 team is " + repr(map(nameByID, self.viewer.p1_team))
-		#print "p2 team is " + repr(map(nameByID, self.viewer.p2_team))
-
-		"""
-		# experiment with checking window focus
-		if user32.GetForegroundWindow() == self.viewer.kof_window:
-			print "I AM HAPPY"
-		else:
-			print "I AM DEPRESSED"
-		#"""
 	
 
 	def runAsynchronous(self):

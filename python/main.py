@@ -6,8 +6,10 @@ from pydbg import pydbg
 from pydbg.defines import *
 
 from Global import *
+from Config import Config
 from Renderer import Renderer
-from HitboxViewer import HitboxViewer
+from Process import Process
+from GameState import GameState
 
 #FRAME_BP = 0x0050EBD0
 FRAME_BP = 0x004D6B3F
@@ -16,7 +18,9 @@ START_BP = 0x0050DB70
 class Main:
 	def __init__(self):
 		self.dbg = pydbg()
-		self.viewer = HitboxViewer(self)
+		self.config = Config()
+		self.process = Process(self)
+		self.gameState = GameState(self)
 		self.renderer = Renderer(self)
 	
 
@@ -27,21 +31,21 @@ class Main:
 
 		def startingHandler(dbg):
 			dbg.bp_set(FRAME_BP, handler=renderFrame)
+			dbg.bp_del(START_BP)
 			return DBG_CONTINUE
 
-		self.viewer.findGame()
+		self.process.findGame()
 		self.renderer.makeWindow()
 		self.renderer.initDirect3D()
-		self.dbg.attach(self.viewer.kof_pid)
+		self.dbg.attach(self.process.kof_pid)
 		self.dbg.bp_set(START_BP, restore=False, handler=startingHandler)
 		self.dbg.run()
 
 
 	def runAsynchronous(self):
-		self.viewer.findGame()
+		self.process.findGame()
 		self.renderer.makeWindow()
 		self.renderer.initDirect3D()
-		#self.renderer.pumpMessages()
 		self.renderer.runAsynchronous()
 
 
@@ -57,7 +61,7 @@ class Main:
 		
 		releaseDebugger()
 		elements = (
-			self.viewer,
+			self.process,
 			self.renderer,
 		)
 		for element in elements:
@@ -66,9 +70,14 @@ class Main:
 		
 		print "Released Main"
 	
-	
+
 m = Main()
-v = m.viewer
+# for REPL testing
+c = m.config
+p = m.process
+g = m.gameState
+p1 = g.p1
+p2 = g.p2
 r = m.renderer
 d = m.dbg
 
@@ -77,9 +86,9 @@ def launch():
 	print "Press Ctrl+C in this terminal window at any time to quit."
 	try:
 		if argvContains("-nosync"):
-			m.runAsynchronous() # run in asynchronous mode (NOT FOR NORMAL USE)
+			m.runAsynchronous() # NOT FOR NORMAL USE
 		else:
-			m.runSynchronous() # run in synchronous mode (sets a breakpoint ingame)
+			m.runSynchronous() # sets a breakpoint ingame
 	except:
 		print "Hit exception in main loop"
 		traceback.print_exc()

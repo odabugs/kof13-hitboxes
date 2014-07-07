@@ -67,3 +67,9 @@ def allKeys(*dicts):
 def interleave(*sequences):
 	concat = lambda x, y: x + y
 	return functools.reduce(concat, zip(*sequences))
+
+
+# return the number of characters needed to print a number,
+# given the optional string format of the number (default %d)
+def digitsIn(number, numFormat="%d"):
+	return len(numFormat % number)

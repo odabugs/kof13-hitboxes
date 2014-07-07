@@ -56,11 +56,13 @@ class Renderer:
 		self.p2 = self.gameState.p2
 		self.windowsMessage = MSG()
 
+		# TODO: move this BS to config file soon
 		self.annotations = argvContains("-annotate")
 		self.drawFilling = argvContains("-usefill")
 		self.drawBorders = not argvContains("-noborders")
 		self.drawPivots  = not argvContains("-nopivots")
 		self.syncedMode  = not argvContains("-nosync")
+		self.drawTicker  = argvContains("-counter")
 		if argvContains("-thicklines"):
 			self.lineThickness = 3
 		else:
@@ -94,12 +96,22 @@ class Renderer:
 		self.scale = 1.0 # scale factor applied to box coordinates before draw
 		self.baseY = 0 # base position onscreen where Y = 0 (i.e., the ground)
 
+		# controls how frequently to check for window movement/resize
 		self.updateWindowTickerInterval = tickerInterval
 		self.updateWindowTicker = tickerInterval # count down, reset at 0
 		
 		# frame ticker at the bottom of the screen
-		self.frameCounter = 1
-		self.frameCounterLimit = 60
+		self.frameTicker = 0
+		self.frameTickerLimit = 600
+		tickerHalfFormat = "%0" + str(digitsIn(self.frameTickerLimit)) + "d"
+		self.tickerFormat = tickerHalfFormat + "/" + tickerHalfFormat
+		self.tickerWidth = len(self.tickerFormat % (0, 0)) * 10
+		self.tickerHeight = 20
+		self.tickerTextColor = colorByName("white")
+		self.tickerFillColor = changeAlpha(colorByName("black"), 0xB0)
+		# set by self.positionTicker()
+		self.tickerX = 0
+		self.tickerY = 0
 
 		self.boxColors = {1: {}, 2 : {}}
 		self.fillBoxColors()
@@ -122,6 +134,15 @@ class Renderer:
 
 		self.boxColors[1] = boxColorsForPlayer(1)
 		self.boxColors[2] = boxColorsForPlayer(2)
+	
+
+	def positionTicker(self, onBottom=True):
+		yOffset = 15
+		self.tickerX = self.centerX - (self.tickerWidth >> 1)
+		if onBottom:
+			self.tickerY = self.height - self.tickerHeight - yOffset
+		else:
+			self.tickerY = yOffset
 
 
 	def release(self):
@@ -156,6 +177,7 @@ class Renderer:
 
 		self.left,  self.top    = origin.x,  origin.y
 		self.right, self.bottom = br.right, br.bottom
+		self.positionTicker()
 
 
 	def hasWindowMoved(self):
@@ -278,16 +300,17 @@ class Renderer:
 
 		d3dxdll.D3DXCreateFontW(
 			self.device,
-			12, # font width
+			24, # font width
 			0, # font height
-			400, # font weight
+			#400, # font weight
+			0, # font weight
 			1, # number of mipmap levels
 			0, # 1 = italics, 0 = no italics
 			0, # character set (0 = ?)
 			0, # font rendering precision
 			0, # font rendering quality
 			0, # font pitch and family index
-			LPCWSTR(unicode("Verdana")), # font typeface
+			LPCWSTR(unicode("fixedsys")), # font typeface
 			byref(self.font))
 		
 		self.createVertexBuffer()
@@ -389,7 +412,7 @@ class Renderer:
 
 	def drawPivot(self, x, y):
 		self.line.SetWidth(self.lineThickness)
-		y = y - (self.lineThickness >> 1)
+		y = y - (self.lineThickness >> 1) # make pivot align with thick lines
 		self.drawLine(x - PIVOT_SIZE, y, x + PIVOT_SIZE, y, WHITE)
 		self.drawLine(x, y - PIVOT_SIZE, x, y + PIVOT_SIZE, WHITE)
 		self.line.SetWidth(1)
@@ -543,7 +566,24 @@ class Renderer:
 
 		drawHitboxesForPlayer(self.p1)
 		drawHitboxesForPlayer(self.p2)
+	
 
+	def drawFrameTicker(self):
+		self.frameTicker += 1
+		if self.frameTicker >= self.frameTickerLimit:
+			self.frameTicker = 0
+		
+		self.drawFill(
+			self.tickerX, self.tickerY,
+			self.tickerX + self.tickerWidth,
+			self.tickerY + self.tickerHeight,
+			self.tickerFillColor) # black
+		tickerText = self.tickerFormat % (
+			self.frameTicker, self.frameTickerLimit)
+		self.drawText(
+			self.tickerX, self.tickerY,
+			self.tickerWidth, self.tickerHeight,
+			self.tickerTextColor, tickerText)
 
 
 	def renderFrame(self):
@@ -558,6 +598,10 @@ class Renderer:
 		self.drawPlayerHitboxes()
 		if self.drawPivots:
 			self.drawPlayerPivots()
+
+		# draw frame ticker at bottom of screen
+		if self.drawTicker:
+			self.drawFrameTicker()
 
 		# finish rendering and commit to screen
 		self.endScene()
